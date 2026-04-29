@@ -170,8 +170,9 @@ function runTurn() {
 
         story.currentChoices.forEach(function(choice, i) {
             var isLatestTurn = currentTurnIdx >= turnCount - 1;
+            // playerView.addChoice expects { choice: { text, tags }, number, sourceSessionId }
             events.choiceAdded && events.choiceAdded(
-                { number: i, text: choice.text, sourceSessionId: currentSessionId },
+                { number: i, choice: { text: choice.text, tags: choice.tags || [] }, sourceSessionId: currentSessionId },
                 isLatestTurn
             );
         });
@@ -249,7 +250,8 @@ setInterval(function() {
 
 // ----------------------------------------------------------------
 
-exports.WebLiveCompiler = {
+// inkProject.js imports require('./liveCompiler.js').LiveCompiler — match that name too
+exports.LiveCompiler = exports.WebLiveCompiler = {
     setProject:            setProject,
     setEdited:             setEdited,
     setEvents:             setEvents,
