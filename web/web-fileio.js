@@ -130,8 +130,6 @@ function makeButton(id, title, iconClass) {
 }
 
 function injectToolbarButtons() {
-    var rightButtons = document.querySelector('#toolbar .buttons.right');
-    if (!rightButtons) return;
 
     // Hidden file input (appended to body, not toolbar)
     var input = document.createElement('input');
@@ -145,11 +143,13 @@ function injectToolbarButtons() {
     var openBtn = makeButton('web-open-btn', 'Open .ink file',         'icon-folder');
     var saveBtn = makeButton('web-save-btn', 'Save / Download (.ink)', 'icon-download');
 
-    // Insert inside .buttons.right at the start so they share the same
-    // absolutely-positioned container and never overlap the left buttons
-    rightButtons.insertBefore(saveBtn, rightButtons.firstChild);
-    rightButtons.insertBefore(openBtn, rightButtons.firstChild);
-    rightButtons.insertBefore(newBtn,  rightButtons.firstChild);
+    // Append to .buttons.left so they sit next to the nav buttons on the left
+    var leftButtons = document.querySelector('#toolbar .buttons.left');
+    if (leftButtons) {
+        leftButtons.appendChild(newBtn);
+        leftButtons.appendChild(openBtn);
+        leftButtons.appendChild(saveBtn);
+    }
 }
 
 exports.WebFileIO = {
