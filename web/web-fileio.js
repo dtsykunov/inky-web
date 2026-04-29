@@ -58,6 +58,26 @@ function init(getContent, setContent, getFilename, setFilename) {
             triggerDownload(getFilename(), getContent());
         }
     });
+
+    // Drag-and-drop a .ink file onto the window
+    document.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    document.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var file = e.dataTransfer.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            var text = ev.target.result.replace(/^\uFEFF/, '');
+            setFilename(file.name);
+            setContent(text);
+            saveToLocalStorage(file.name, text);
+        };
+        reader.readAsText(file, 'utf-8');
+    });
 }
 
 // Called by web-controller on every editor change
@@ -125,12 +145,11 @@ function injectToolbarButtons() {
     var openBtn = makeButton('web-open-btn', 'Open .ink file',         'icon-folder');
     var saveBtn = makeButton('web-save-btn', 'Save / Download (.ink)', 'icon-download');
 
-    var wrap = document.createElement('div');
-    wrap.appendChild(newBtn);
-    wrap.appendChild(openBtn);
-    wrap.appendChild(saveBtn);
-
-    rightButtons.parentNode.insertBefore(wrap, rightButtons);
+    // Insert inside .buttons.right at the start so they share the same
+    // absolutely-positioned container and never overlap the left buttons
+    rightButtons.insertBefore(saveBtn, rightButtons.firstChild);
+    rightButtons.insertBefore(openBtn, rightButtons.firstChild);
+    rightButtons.insertBefore(newBtn,  rightButtons.firstChild);
 }
 
 exports.WebFileIO = {
