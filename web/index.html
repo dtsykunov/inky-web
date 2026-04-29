@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Inky — web</title>
+
+    <script>
+      // In Electron this class is set from preload.js. In the browser we just use "web".
+      document.documentElement.classList.add("web");
+    </script>
+
+  </head>
+  <body>
+
+    <link rel="stylesheet" href="photon/css/photon.css">
+    <link rel="stylesheet" href="ink-icons/css/ink.css">
+
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="inkTheme.css">
+    <link rel="stylesheet" href="dark.css">
+    <link rel="stylesheet" href="contrast.css">
+    <link rel="stylesheet" href="focus.css">
+
+    <div class="window">
+
+      <h1 class="title"></h1>
+
+      <div id="toolbar" class="draggable">
+
+        <div class="buttons left">
+
+          <div class="button nav-toggle" title="Toggle file browser">
+            <span class="icon icon-menu"></span>
+          </div>
+
+          <div class="button knot-toggle" title="Toggle knot browser">
+            <span class="icon ink-icon icon-category"></span>
+          </div>
+          <div class="button nav-back" title="Navigate back">
+            <span class="icon icon-left-dir"></span>
+          </div>
+          <div class="button nav-forward" title="Navigate forward">
+            <span class="icon icon-right-dir"></span>
+          </div>
+
+        </div>
+
+        <p class="issuesMessage hidden">No issues.</p>
+        <div class="issuesSummary hidden">
+          <div class="issueCount todo"><span>4</span> <img class="issue-icon todo" src="img/todo-icon.png"/></div>
+          <div class="issueCount warning"><span>4</span> <img class="issue-icon warning" src="img/warning-icon.png"/></div>
+          <div class="issueCount error"><span>4</span> <img class="issue-icon error" src="img/error-icon.png"/></div>
+        </div>
+
+        <div class="buttons right">
+          <div class="busySpinner"></div>
+
+          <div class="button step-back" title="Rewind a single choice">
+            <span class="icon icon-reply"></span>
+          </div>
+
+          <div class="button rewind" title="Restart story">
+            <span class="icon icon-reply-all"></span>
+          </div>
+
+        </div>
+
+        <div class="issue-popup hidden">
+          <img class="nubbin" src="img/nubbin.png"/>
+          <div class="table">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="window-content">
+
+        <div id="main">
+           <div class="sidebar hidden">
+
+            <div class="nav-wrapper hidden hasFooter" id="file-nav-wrapper">
+            </div>
+            <div class="footer">
+              <a class="add-include-button">
+                <span class="icon icon-plus"></span>
+                <span>Add new include</span>
+              </a>
+              <div class="new-include-form">
+                <h5>Enter new ink filename:</h5>
+                <div class="inputWrapper">
+                  <input type="text" class="form-control" placeholder="Folder/inkFileName.ink">
+                </div>
+                <div class="checkbox add-to-main-ink">
+                    <input type="checkbox" checked><span>Add to main ink</span>
+                </div>
+                <div class="form-buttons">
+                  <button id="add-include" class="btn btn-primary pull-right">Add</button>
+                  <button id="cancel-add-include" class="btn btn-default pull-right">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div class="nav-wrapper hidden" id="knot-stitch-wrapper">
+            </div>
+
+          </div><!-- sidebar -->
+
+          <div class="split hidden"></div>
+
+          <div class="twopane">
+            <div id="editor"></div>
+
+            <div class="split"></div>
+
+            <div id="player">
+
+              <table class="expressionWatch">
+                <tbody>
+                </tbody>
+              </table>
+
+              <div class="scrollContainer">
+                <div class="innerText active">
+                </div>
+                <div class="hiddenBuffer">
+                  <div class="innerText">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div><!-- window-content -->
+
+      <div id="goto-anything-container" class="ignore-events">
+        <div id="goto-anything" class="hidden">
+          <input placeholder="File name, stitch, knot, line number, or text"></input>
+          <ul class="results">
+          </ul>
+        </div>
+      </div>
+
+    </div><!-- window -->
+
+  </body>
+
+  <!-- ace must be loaded before bundle.js since editorView.js uses ace as a global -->
+  <script src="acesrc/ace.js" type="text/javascript" charset="utf-8"></script>
+  <script src="acesrc/ext-language_tools.js"></script>
+
+  <script src="bundle.js"></script>
+</html>
