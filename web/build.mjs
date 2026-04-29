@@ -27,14 +27,24 @@ console.log('Assets copied.');
 
 const shimDir = resolve(__dirname, 'shims');
 
+// Plugin: redirect relative liveCompiler.js imports to our web version.
+// inkProject.js does require('./liveCompiler.js') which we must intercept.
+const replaceRelativeModules = {
+    name: 'web-replacements',
+    setup(build) {
+        build.onResolve({ filter: /\/liveCompiler\.js$/ }, () => ({
+            path: resolve(__dirname, 'web-liveCompiler.js'),
+        }));
+    },
+};
+
 const buildOptions = {
     entryPoints: [resolve(__dirname, 'web-controller.js')],
     bundle: true,
     outfile: join(distDir, 'bundle.js'),
     platform: 'browser',
     format: 'iife',
-    // ace is loaded as a plain <script> tag — treat as external global
-    external: [],
+    plugins: [replaceRelativeModules],
     alias: {
         'electron':  join(shimDir, 'electron.js'),
         'path':      join(shimDir, 'path.js'),

@@ -1,4 +1,4 @@
-'use strict';
+
 
 // No-op stubs — file system is not available in the browser.
 // Real I/O goes through web-inkFile.js / web-inkProject.js.
