@@ -80,6 +80,7 @@ InkProject.setEvents({
         EditorView.focus();
         LiveCompiler.setProject(project);
         const filename = project.activeInkFile.filename();
+        currentFilename = filename;
         ToolbarView.setTitle(filename);
         NavView.setMainInkFilename(filename);
         NavView.setFiles(project.mainInk, project.files);
@@ -294,7 +295,53 @@ $(document).ready(() => {
             currentFilename = name;
             ToolbarView.setTitle(name);
         },
-        getAllFiles: getAllFilesContent,
+        getAllFiles:  getAllFilesContent,
+        newProject: () => {
+            InkProject.startNew();
+            // currentFilename updated by the newProject event handler above
+            WebFileIO.autosave(currentFilename, getAllFilesContent());
+        },
+    });
+
+    // Double-click a file in the sidebar to rename it
+    $(document).on('dblclick', '#file-nav-wrapper .nav-group-item', function(e) {
+        e.preventDefault();
+        var fileId  = parseInt($(this).attr('data-file-id'));
+        var project = InkProject.currentProject;
+        var inkFile = project.inkFileWithId(fileId);
+        if (!inkFile) return;
+
+        var oldName    = inkFile.filename();
+        var newName    = window.prompt('Rename file:', oldName);
+        if (!newName || newName.trim() === '' || newName === oldName) return;
+        newName = newName.trim();
+        if (path.extname(newName) === '') newName += '.ink';
+
+        var dir        = path.dirname(inkFile.relativePath());
+        var newRelPath = dir === '.' ? newName : dir + '/' + newName;
+
+        // Update INCLUDE references in all sibling files
+        project.files.forEach(function(f) {
+            if (f === inkFile) return;
+            var content = f.getValue();
+            var escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            var updated = content.replace(
+                new RegExp('(INCLUDE\\s+)' + escaped, 'g'),
+                '$1' + newName
+            );
+            if (updated !== content) f.setValue(updated);
+        });
+
+        inkFile.relPath = newRelPath;
+
+        if (inkFile === project.mainInk) {
+            currentFilename = newName;
+            ToolbarView.setTitle(newName);
+        }
+
+        LiveCompiler.setEdited();
+        NavView.setFiles(project.mainInk, project.files);
+        WebFileIO.autosave(currentFilename, getAllFilesContent());
     });
 
     // Restore the last auto-saved session (if any)

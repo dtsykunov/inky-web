@@ -40,20 +40,10 @@ function init(opts) {
         downloadAllFiles(opts.getAllFiles());
     });
 
-    // New button
+    // New button — creates a completely fresh project
     document.getElementById('web-new-btn').addEventListener('click', function() {
         if (!window.confirm('Start a new story? Unsaved changes will be lost.')) return;
-        var name    = 'Untitled.ink';
-        var content = 'Once upon a time...\n\n'
-            + ' * There were two choices.\n'
-            + ' * There were four lines of content.\n\n'
-            + '- They lived happily ever after.\n'
-            + '    -> END\n';
-        var map = {};
-        map[name] = content;
-        opts.setFilename(name);
-        opts.setFiles(map, name);
-        saveToLocalStorage(name, map);
+        opts.newProject();
     });
 
     // Ctrl+S / Cmd+S → download all
