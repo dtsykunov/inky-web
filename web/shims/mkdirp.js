@@ -1,4 +1,4 @@
-'use strict';
+
 
 const noop = () => {};
 noop.sync = noop;

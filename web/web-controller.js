@@ -1,4 +1,4 @@
-'use strict';
+
 
 // jQuery must be set as a global before any other module loads
 const $ = window.jQuery = require('../app/renderer/jquery-2.2.3.min.js');

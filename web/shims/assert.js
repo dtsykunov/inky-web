@@ -1,4 +1,4 @@
-'use strict';
+
 
 function assert(condition, msg) {
     if (!condition) console.warn('Assertion failed:', msg);

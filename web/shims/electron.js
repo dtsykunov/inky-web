@@ -1,4 +1,4 @@
-'use strict';
+
 
 // i18n.js calls ipcRenderer.sendSync('i18n._', msgid) — return the msgid as-is
 const ipcRenderer = {

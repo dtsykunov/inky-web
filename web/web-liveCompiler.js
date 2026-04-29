@@ -1,4 +1,4 @@
-'use strict';
+
 
 // Stub implementation for Step 1 — no compilation.
 // Will be replaced with a full inkjs-based implementation in Step 2.
