@@ -237,4 +237,5 @@ updateTheme(window.localStorage.getItem('theme'));
 $(document).ready(() => {
     InkProject.startNew();
     NavView.setKnots(InkProject.currentProject.mainInk);
+    ToolbarView.setBusySpinnerVisible(false);
 });
