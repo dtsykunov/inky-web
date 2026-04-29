@@ -2,6 +2,8 @@
 // Injects three toolbar buttons and wires up keyboard shortcuts.
 // Called once from web-controller.js after $(document).ready().
 
+var JSZip = require('jszip');
+
 var STORAGE_KEY_V1 = 'inky-web-autosave';
 var STORAGE_KEY_V2 = 'inky-web-project';
 var FILENAME_KEY   = 'inky-web-filename';
@@ -150,11 +152,21 @@ function saveToLocalStorage(mainFilename, filesMap) {
 
 function downloadAllFiles(filesMap) {
     var entries = Object.entries(filesMap);
-    entries.forEach(function(entry, i) {
-        var relPath = entry[0];
-        var content = entry[1];
-        var basename = relPath.split('/').pop().split('\\').pop();
-        setTimeout(function() { triggerDownload(basename, content); }, i * 120);
+    if (entries.length === 1) {
+        var basename = entries[0][0].split('/').pop().split('\\').pop();
+        triggerDownload(basename, entries[0][1]);
+        return;
+    }
+
+    var zip = new JSZip();
+    entries.forEach(function(entry) {
+        zip.file(entry[0], entry[1]);
+    });
+    zip.generateAsync({ type: 'blob' }).then(function(blob) {
+        // Derive archive name from the first (main) filename
+        var mainName = entries[0][0].split('/').pop().split('\\').pop();
+        var archiveName = mainName.replace(/\.ink$/i, '') + '.zip';
+        triggerDownload(archiveName, blob);
     });
 }
 
