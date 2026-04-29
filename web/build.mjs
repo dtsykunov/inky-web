@@ -20,8 +20,9 @@ const files = ['main.css', 'inkTheme.css', 'dark.css', 'contrast.css', 'focus.cs
 for (const f of files) {
     copyFileSync(join(rendererDir, f), join(distDir, f));
 }
-// index.html lives in web/ (not renderer), copy it to dist/
+// Files in web/ (not renderer) copied to dist/
 copyFileSync(join(__dirname, 'index.html'), join(distDir, 'index.html'));
+copyFileSync(join(__dirname, 'web.css'),    join(distDir, 'web.css'));
 
 console.log('Assets copied.');
 

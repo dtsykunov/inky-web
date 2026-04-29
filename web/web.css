@@ -1,0 +1,7 @@
+/* Web-specific overrides for inky-web */
+
+/* The "No issues." paragraph is purely decorative — it must not block
+   pointer events to the toolbar buttons sitting behind it. */
+#toolbar p.issuesMessage {
+  pointer-events: none;
+}
