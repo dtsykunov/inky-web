@@ -17,12 +17,59 @@ const NavHistory          = require('../app/renderer/navHistory.js').NavHistory;
 const GotoAnything        = require('../app/renderer/goto.js').GotoAnything;
 const i18n                = require('../app/renderer/i18n.js');
 
-// Web-specific replacement for liveCompiler (no inklecate, uses inkjs directly)
 const LiveCompiler = require('./web-liveCompiler.js').WebLiveCompiler;
 const WebFileIO    = require('./web-fileio.js').WebFileIO;
 
-// Filename state — kept in sync with toolbar title and localStorage
+// Main filename shown in the toolbar and used for downloads/localStorage
 var currentFilename = 'Untitled.ink';
+
+// ----------------------------------------------------------------
+// Helpers
+// ----------------------------------------------------------------
+
+// Returns { relPath: content } for every open file in the project
+function getAllFilesContent() {
+    var project = InkProject.currentProject;
+    if (!project) return {};
+    var map = {};
+    project.files.forEach(function(f) {
+        map[f.relativePath()] = f.getValue();
+    });
+    return map;
+}
+
+// Load a set of files into the current project.
+// filesMap: { relPath: content }
+// mainFilename: key of the main file in filesMap
+function setAllFiles(filesMap, mainFilename) {
+    var project = InkProject.currentProject;
+
+    // Update main file identity
+    currentFilename = mainFilename;
+    ToolbarView.setTitle(mainFilename);
+    project.mainInk.relPath = mainFilename;
+
+    // Set main content (suppress include-file auto-creation from old INCLUDE lines)
+    project.mainInk.setValue(filesMap[mainFilename] || '');
+
+    // Remove all existing include files so we start clean
+    project.files.length = 0;
+    project.files.push(project.mainInk);
+
+    // Add each include file as a brand-new InkFile (no disk access)
+    Object.keys(filesMap).forEach(function(relPath) {
+        if (relPath === mainFilename) return;
+        var inkFile = project.createInkFile(relPath, /*isBrandNew=*/true);
+        inkFile.setValue(filesMap[relPath] || '');
+    });
+
+    LiveCompiler.setEdited();
+    NavView.setFiles(project.mainInk, project.files);
+    NavView.setKnots(project.mainInk);
+
+    // Auto-show the sidebar when there are include files
+    if (project.files.length > 1) NavView.show();
+}
 
 // ----------------------------------------------------------------
 // InkProject events
@@ -35,6 +82,7 @@ InkProject.setEvents({
         const filename = project.activeInkFile.filename();
         ToolbarView.setTitle(filename);
         NavView.setMainInkFilename(filename);
+        NavView.setFiles(project.mainInk, project.files);
         NavHistory.reset();
         NavHistory.addStep();
     },
@@ -57,16 +105,6 @@ InkProject.setEvents({
 });
 
 // ----------------------------------------------------------------
-// Helpers
-// ----------------------------------------------------------------
-
-function gotoIssue(issue) {
-    InkProject.currentProject.showInkFile(issue.filename);
-    EditorView.gotoLine(issue.lineNumber);
-    NavHistory.addStep();
-}
-
-// ----------------------------------------------------------------
 // NavHistory events
 // ----------------------------------------------------------------
 
@@ -80,6 +118,12 @@ NavHistory.setEvents({
 // ----------------------------------------------------------------
 // LiveCompiler events
 // ----------------------------------------------------------------
+
+function gotoIssue(issue) {
+    InkProject.currentProject.showInkFile(issue.filename);
+    EditorView.gotoLine(issue.lineNumber);
+    NavHistory.addStep();
+}
 
 LiveCompiler.setEvents({
     resetting: () => {},
@@ -105,7 +149,6 @@ LiveCompiler.setEvents({
         ToolbarView.updateIssueSummary(errors);
     },
     playerPrompt: (_replaying, doneCallback) => {
-        // Expression watch not supported in web mode — skip straight to done
         PlayerView.contentReady();
         doneCallback();
     },
@@ -127,7 +170,7 @@ EditorView.setEvents({
     change: () => {
         LiveCompiler.setEdited();
         NavView.setKnots(InkProject.currentProject.activeInkFile);
-        WebFileIO.autosave(currentFilename, EditorView.getValue());
+        WebFileIO.autosave(currentFilename, getAllFilesContent());
     },
     jumpToSymbol: (symbolName, contextPos) => {
         const found = InkProject.currentProject.findSymbol(symbolName, contextPos);
@@ -153,7 +196,7 @@ EditorView.setEvents({
 // ----------------------------------------------------------------
 
 PlayerView.setEvents({
-    jumpToSource: () => {} // needs inklecate source maps — not available in web
+    jumpToSource: () => {}
 });
 
 // ----------------------------------------------------------------
@@ -188,7 +231,7 @@ ToolbarView.setEvents({
 // NavView events
 // ----------------------------------------------------------------
 
-const path = require('path'); // aliased to path-browserify by esbuild
+const path = require('path');
 
 NavView.setEvents({
     clickFileId: (fileId) => {
@@ -244,32 +287,19 @@ $(document).ready(() => {
     NavView.setKnots(InkProject.currentProject.mainInk);
     ToolbarView.setBusySpinnerVisible(false);
 
-    // File I/O helpers passed as closures so WebFileIO stays decoupled
-    WebFileIO.init(
-        // getContent
-        () => InkProject.currentProject.mainInk.getValue(),
-        // setContent: load text into the editor and trigger recompile
-        (text) => {
-            InkProject.currentProject.mainInk.setValue(text);
-            LiveCompiler.setEdited();
-            NavView.setKnots(InkProject.currentProject.mainInk);
-        },
-        // getFilename
-        () => currentFilename,
-        // setFilename
-        (name) => {
+    WebFileIO.init({
+        setFiles:    setAllFiles,
+        getFilename: () => currentFilename,
+        setFilename: (name) => {
             currentFilename = name;
             ToolbarView.setTitle(name);
-        }
-    );
+        },
+        getAllFiles: getAllFilesContent,
+    });
 
     // Restore the last auto-saved session (if any)
     var saved = WebFileIO.loadFromLocalStorage();
     if (saved) {
-        currentFilename = saved.filename;
-        ToolbarView.setTitle(saved.filename);
-        InkProject.currentProject.mainInk.setValue(saved.content);
-        LiveCompiler.setEdited();
-        NavView.setKnots(InkProject.currentProject.mainInk);
+        setAllFiles(saved.files, saved.mainFilename);
     }
 });
