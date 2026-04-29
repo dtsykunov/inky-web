@@ -19,6 +19,10 @@ const i18n                = require('../app/renderer/i18n.js');
 
 // Web-specific replacement for liveCompiler (no inklecate, uses inkjs directly)
 const LiveCompiler = require('./web-liveCompiler.js').WebLiveCompiler;
+const WebFileIO    = require('./web-fileio.js').WebFileIO;
+
+// Filename state — kept in sync with toolbar title and localStorage
+var currentFilename = 'Untitled.ink';
 
 // ----------------------------------------------------------------
 // InkProject events
@@ -123,6 +127,7 @@ EditorView.setEvents({
     change: () => {
         LiveCompiler.setEdited();
         NavView.setKnots(InkProject.currentProject.activeInkFile);
+        WebFileIO.autosave(currentFilename, EditorView.getValue());
     },
     jumpToSymbol: (symbolName, contextPos) => {
         const found = InkProject.currentProject.findSymbol(symbolName, contextPos);
@@ -238,4 +243,33 @@ $(document).ready(() => {
     InkProject.startNew();
     NavView.setKnots(InkProject.currentProject.mainInk);
     ToolbarView.setBusySpinnerVisible(false);
+
+    // File I/O helpers passed as closures so WebFileIO stays decoupled
+    WebFileIO.init(
+        // getContent
+        () => InkProject.currentProject.mainInk.getValue(),
+        // setContent: load text into the editor and trigger recompile
+        (text) => {
+            InkProject.currentProject.mainInk.setValue(text);
+            LiveCompiler.setEdited();
+            NavView.setKnots(InkProject.currentProject.mainInk);
+        },
+        // getFilename
+        () => currentFilename,
+        // setFilename
+        (name) => {
+            currentFilename = name;
+            ToolbarView.setTitle(name);
+        }
+    );
+
+    // Restore the last auto-saved session (if any)
+    var saved = WebFileIO.loadFromLocalStorage();
+    if (saved) {
+        currentFilename = saved.filename;
+        ToolbarView.setTitle(saved.filename);
+        InkProject.currentProject.mainInk.setValue(saved.content);
+        LiveCompiler.setEdited();
+        NavView.setKnots(InkProject.currentProject.mainInk);
+    }
 });
