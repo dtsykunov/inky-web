@@ -4,9 +4,9 @@
 
 **[Try it now → https://dtsykunov.github.io/inky-web/](https://dtsykunov.github.io/inky-web/)**
 
-**Inky Web** is a free, browser-based editor for [ink](http://www.inklestudios.com/ink) — inkle's open-source scripting language for interactive fiction and narrative games. Write, preview, and download your ink stories entirely in the browser. No installation required.
+**Inky Web** is a free, browser-based editor for [ink](http://www.inklestudios.com/ink) — inkle's open-source scripting language for interactive fiction and narrative games. Write, preview, and download your ink stories entirely in the browser with no installation required.
 
-This is a fork of the official [inkle/inky](https://github.com/inkle/inky) desktop editor, rebuilt to run fully client-side as a web app. Your work is auto-saved to browser storage and never leaves your device.
+This is a fork of the official [inkle/inky](https://github.com/inkle/inky) desktop editor, rebuilt to run fully client-side as a progressive web app. Your work is auto-saved to browser storage and never leaves your device.
 
 ![](resources/screenshot.gif)
 
@@ -17,10 +17,12 @@ This is a fork of the official [inkle/inky](https://github.com/inkle/inky) deskt
 - **As-you-type error and warning highlighting** — errors are underlined in the editor the moment you make them
 - **Issue browser** — lists errors, warnings, and TODOs with one-click jump to the exact line
 - **Jump to definition** — alt-click any divert target (e.g. `-> theKnot`) to navigate to its definition
-- **Multi-file project support** — `INCLUDE` directives are parsed automatically; add new include files from the sidebar
-- **Open / Save / New** — open any `.ink` file from your computer; save (download) at any time or with Ctrl+S / Cmd+S
-- **Drag-and-drop** — drag a `.ink` file onto the window to open it instantly
-- **Auto-save** — your story is continuously saved to `localStorage` and restored on your next visit
+- **Multi-file project support** — open multiple `.ink` files at once; `INCLUDE` directives are shown in the file browser; add new include files from the sidebar with the "+" button
+- **File browser** — sidebar shows all open files; click to switch between them; double-click to rename
+- **Rename files** — double-click any file in the sidebar; `INCLUDE` references in other files are updated automatically
+- **Open / Save / New** — open any `.ink` file (or multiple files) from your computer; save as a single `.ink` file or a `.zip` archive for multi-file projects; supports Ctrl+S / Cmd+S
+- **Drag-and-drop** — drag one or more `.ink` files onto the window to open them instantly
+- **Auto-save** — your project is continuously saved to `localStorage` and restored on your next visit
 - **Works offline** — once loaded, the editor requires no network connection
 - **Free and open source** — MIT licensed, runs entirely in your browser
 
@@ -28,17 +30,26 @@ This is a fork of the official [inkle/inky](https://github.com/inkle/inky) deskt
 
 1. Open **[https://dtsykunov.github.io/inky-web/](https://dtsykunov.github.io/inky-web/)** in any modern browser
 2. A sample story loads automatically — start editing right away
-3. Open your own `.ink` file with the folder button, or drag it onto the window
+3. Open your own `.ink` file(s) with the folder button, or drag them onto the window
 4. The right pane plays your story live; click choices to advance
 5. Download your finished story with the save button or Ctrl+S / Cmd+S
+
+## Multi-file projects
+
+Select multiple `.ink` files with the Open button (or drag them all at once). The file that contains `INCLUDE` lines referencing the others is automatically set as the main file. The sidebar shows all open files and lets you switch between them.
+
+When saving a multi-file project, all files are packaged into a `.zip` archive that preserves the relative path structure — unzip it to get a folder you can open directly in the desktop version of Inky.
+
+Use the **"Add new include"** button ("+") at the bottom of the sidebar to create a new blank file and optionally add an `INCLUDE` line to your main ink file.
 
 ## Keyboard shortcuts
 
 | Shortcut | Action |
 |---|---|
-| Ctrl+S / Cmd+S | Save (download) current file |
+| Ctrl+S / Cmd+S | Save / download current project |
 | Alt+click | Jump to divert / knot definition |
 | Ctrl+P / Cmd+P | Go to anything (file, knot, line) |
+| Double-click (sidebar) | Rename a file |
 
 ## What is ink?
 
@@ -91,6 +102,7 @@ Inky Web is built on:
 - [Electron](https://www.electronjs.org/) renderer code from the original Inky (reused as-is)
 - [Ace](https://ace.c9.io/) code editor
 - [inkjs](https://github.com/y-lohse/inkjs) for in-browser ink compilation and story playback
+- [JSZip](https://stuk.github.io/jszip/) for multi-file zip downloads
 - [esbuild](https://esbuild.github.io/) for bundling
 - [GitHub Pages](https://pages.github.com/) for hosting
 
