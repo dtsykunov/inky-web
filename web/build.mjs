@@ -60,9 +60,13 @@ const buildOptions = {
         'process.platform': '"web"',
         'process.env.NODE_ENV': '"production"',
     },
-    // setImmediate is Node-only; polyfill it for the browser
     banner: {
-        js: 'if(typeof setImmediate==="undefined")window.setImmediate=function(fn,_a,_b){return setTimeout(fn,0);};',
+        js: [
+            // setImmediate is Node-only
+            'if(typeof setImmediate==="undefined")window.setImmediate=function(fn,_a,_b){return setTimeout(fn,0);};',
+            // scrollIntoViewIfNeeded is Chrome/Electron-only (used in navView.js)
+            'if(!Element.prototype.scrollIntoViewIfNeeded)Element.prototype.scrollIntoViewIfNeeded=function(c){this.scrollIntoView({block:c===false?"end":"nearest"});};',
+        ].join(''),
     },
     logLevel: 'info',
 };
