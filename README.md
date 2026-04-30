@@ -21,6 +21,7 @@ This is a fork of the official [inkle/inky](https://github.com/inkle/inky) deskt
 - **File browser** — sidebar shows all open files; click to switch between them; double-click to rename
 - **Rename files** — double-click any file in the sidebar; `INCLUDE` references in other files are updated automatically
 - **Open / Save / New** — open any `.ink` file (or multiple files) from your computer; save as a single `.ink` file or a `.zip` archive for multi-file projects; supports Ctrl+S / Cmd+S
+- **Export as web player** — one click generates a self-contained zip you can host anywhere; opening `index.html` inside it runs the finished story in any browser, no server required
 - **Drag-and-drop** — drag one or more `.ink` files onto the window to open them instantly
 - **Auto-save** — your project is continuously saved to `localStorage` and restored on your next visit
 - **Works offline** — once loaded, the editor requires no network connection
@@ -41,6 +42,17 @@ Select multiple `.ink` files with the Open button (or drag them all at once). Th
 When saving a multi-file project, all files are packaged into a `.zip` archive that preserves the relative path structure — unzip it to get a folder you can open directly in the desktop version of Inky.
 
 Use the **"Add new include"** button ("+") at the bottom of the sidebar to create a new blank file and optionally add an `INCLUDE` line to your main ink file.
+
+## Exporting as a web player
+
+Click the **Export** button (↗ icon) in the toolbar to compile your story and download a standalone zip. Extract it and open `index.html` to play the finished story in any browser — no server, no dependencies.
+
+The exported player includes:
+- Save / load progress (via `localStorage`)
+- Light / dark theme toggle
+- Support for ink tags: `# title:`, `# author:`, `# theme:`, `IMAGE:`, `AUDIO:`, `CLASS:`, `CLEAR:`, `RESTART:`
+
+The story title in the player is taken from a `# title: My Story` tag at the top of your main ink file, falling back to the filename.
 
 ## Keyboard shortcuts
 
