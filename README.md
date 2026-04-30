@@ -8,8 +8,6 @@
 
 This is a fork of the official [inkle/inky](https://github.com/inkle/inky) desktop editor, rebuilt to run fully client-side as a progressive web app. Your work is auto-saved to browser storage and never leaves your device.
 
-![](resources/screenshot.gif)
-
 ## Features
 
 - **Live story preview** — the play pane updates as you type and replays your choices automatically after every recompile
