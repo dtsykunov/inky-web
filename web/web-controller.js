@@ -235,6 +235,36 @@ ToolbarView.setEvents({
 
 const path = require('path');
 
+// Rename inkFile to newName, updating INCLUDE references and persisting.
+function renameInkFile(inkFile, newName) {
+    newName = newName.trim();
+    if (!newName) return;
+    if (!path.extname(newName)) newName += '.ink';
+    if (newName === inkFile.filename()) return;
+
+    var oldName    = inkFile.filename();
+    var dir        = path.dirname(inkFile.relativePath());
+    inkFile.relPath = (dir === '.' ? newName : dir + '/' + newName);
+
+    // Update INCLUDE lines in sibling files that referenced the old name
+    var escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    InkProject.currentProject.files.forEach(function(f) {
+        if (f === inkFile) return;
+        var content = f.getValue();
+        var updated = content.replace(
+            new RegExp('(INCLUDE\\s+)' + escaped, 'g'), '$1' + newName
+        );
+        if (updated !== content) f.setValue(updated);
+    });
+
+    if (inkFile === InkProject.currentProject.mainInk) currentFilename = newName;
+    if (inkFile === InkProject.currentProject.activeInkFile) ToolbarView.setTitle(newName);
+
+    LiveCompiler.setEdited();
+    NavView.setFiles(InkProject.currentProject.mainInk, InkProject.currentProject.files);
+    WebFileIO.autosave(currentFilename, getAllFilesContent());
+}
+
 NavView.setEvents({
     clickFileId: (fileId) => {
         const inkFile = InkProject.currentProject.inkFileWithId(fileId);
@@ -325,45 +355,49 @@ $(document).ready(() => {
         });
     })();
 
-    // Double-click a file in the sidebar to rename it
+    // Click the toolbar title to rename the active file inline
+    (function() {
+        var $title = $('h1.title');
+        $title.attr('title', 'Click to rename');
+
+        var $input = $('<input id="title-rename-input" type="text" spellcheck="false">')
+            .insertAfter($title);
+
+        function startRename() {
+            var name = InkProject.currentProject.activeInkFile.filename();
+            // Strip .ink for cleaner editing; other extensions are kept as-is
+            var display = /\.ink$/i.test(name) ? name.slice(0, -4) : name;
+            $title.hide();
+            $input.val(display).show().focus().select();
+        }
+
+        function commitRename() {
+            $input.hide();
+            $title.show();
+            var inkFile = InkProject.currentProject.activeInkFile;
+            if (inkFile) renameInkFile(inkFile, $input.val());
+        }
+
+        $title.on('click', startRename);
+
+        $input.on('keydown', function(e) {
+            if (e.key === 'Enter')  { e.preventDefault(); commitRename(); }
+            if (e.key === 'Escape') { $input.hide(); $title.show(); }
+        });
+        // Commit on blur unless the input was already hidden (Enter/Escape path)
+        $input.on('blur', function() {
+            if ($input.is(':visible')) commitRename();
+        });
+    })();
+
+    // Double-click a file in the sidebar to rename it (same logic)
     $(document).on('dblclick', '#file-nav-wrapper .nav-group-item', function(e) {
         e.preventDefault();
         var fileId  = parseInt($(this).attr('data-file-id'));
-        var project = InkProject.currentProject;
-        var inkFile = project.inkFileWithId(fileId);
+        var inkFile = InkProject.currentProject.inkFileWithId(fileId);
         if (!inkFile) return;
-
-        var oldName    = inkFile.filename();
-        var newName    = window.prompt('Rename file:', oldName);
-        if (!newName || newName.trim() === '' || newName === oldName) return;
-        newName = newName.trim();
-        if (path.extname(newName) === '') newName += '.ink';
-
-        var dir        = path.dirname(inkFile.relativePath());
-        var newRelPath = dir === '.' ? newName : dir + '/' + newName;
-
-        // Update INCLUDE references in all sibling files
-        project.files.forEach(function(f) {
-            if (f === inkFile) return;
-            var content = f.getValue();
-            var escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            var updated = content.replace(
-                new RegExp('(INCLUDE\\s+)' + escaped, 'g'),
-                '$1' + newName
-            );
-            if (updated !== content) f.setValue(updated);
-        });
-
-        inkFile.relPath = newRelPath;
-
-        if (inkFile === project.mainInk) {
-            currentFilename = newName;
-            ToolbarView.setTitle(newName);
-        }
-
-        LiveCompiler.setEdited();
-        NavView.setFiles(project.mainInk, project.files);
-        WebFileIO.autosave(currentFilename, getAllFilesContent());
+        var newName = window.prompt('Rename file:', inkFile.filename());
+        if (newName) renameInkFile(inkFile, newName);
     });
 
     // Restore the last auto-saved session (if any)
