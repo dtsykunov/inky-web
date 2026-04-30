@@ -24,6 +24,19 @@ for (const f of files) {
 copyFileSync(join(__dirname, 'index.html'), join(distDir, 'index.html'));
 copyFileSync(join(__dirname, 'web.css'),    join(distDir, 'web.css'));
 
+// Export-for-web player template: copied into dist/export-template/ so the
+// bundle can fetch them at runtime without bundling large static assets.
+const exportTemplateDir = resolve(__dirname, '../app/export-for-web-template');
+const exportDistDir     = join(distDir, 'export-template');
+mkdirSync(exportDistDir, { recursive: true });
+for (const f of ['index.html', 'main.js', 'style.css']) {
+    copyFileSync(join(exportTemplateDir, f), join(exportDistDir, f));
+}
+copyFileSync(
+    resolve(__dirname, 'node_modules/inkjs/dist/ink.js'),
+    join(exportDistDir, 'ink.js')
+);
+
 console.log('Assets copied.');
 
 const shimDir = resolve(__dirname, 'shims');
