@@ -19,6 +19,7 @@ const i18n                = require('../app/renderer/i18n.js');
 
 const LiveCompiler = require('./web-liveCompiler.js').WebLiveCompiler;
 const WebFileIO    = require('./web-fileio.js').WebFileIO;
+const WebExport    = require('./web-export.js').WebExport;
 
 // Main filename shown in the toolbar and used for downloads/localStorage
 var currentFilename = 'Untitled.ink';
@@ -302,6 +303,27 @@ $(document).ready(() => {
             WebFileIO.autosave(currentFilename, getAllFilesContent());
         },
     });
+
+    // Export-for-web button
+    (function() {
+        var btn  = document.createElement('div');
+        btn.className = 'button web-btn';
+        btn.id        = 'web-export-btn';
+        btn.title     = 'Export as web player';
+        var icon = document.createElement('span');
+        icon.className = 'icon icon-export';
+        btn.appendChild(icon);
+        var leftButtons = document.querySelector('#toolbar .buttons.left');
+        if (leftButtons) leftButtons.appendChild(btn);
+
+        btn.addEventListener('click', function() {
+            WebExport.exportForWeb(
+                InkProject.currentProject,
+                function(msg) { alert(msg); },
+                null
+            );
+        });
+    })();
 
     // Double-click a file in the sidebar to rename it
     $(document).on('dblclick', '#file-nav-wrapper .nav-group-item', function(e) {
