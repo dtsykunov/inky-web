@@ -6,15 +6,8 @@
   pointer-events: none;
 }
 
-/* Make the toolbar title clickable for inline rename */
-.web h1.title {
-  pointer-events: auto;
-  cursor: pointer;
-  top: 24px; /* shifted down by menubar height */
-}
-.web h1.title:hover {
-  text-decoration: underline dotted #888;
-}
+/* Hide the toolbar title — filename lives in the sidebar only */
+.web h1.title { display: none; }
 
 /* ---- Menu bar ----------------------------------------------------------- */
 #web-menubar {
@@ -211,24 +204,20 @@
   cursor: pointer;
 }
 
-/* Inline rename input — mirrors h1.title geometry exactly */
-#title-rename-input {
-  display: none;
-  position: absolute;
-  left: 70px;
-  right: 70px;
-  height: 30px;
-  top: 24px;
-  z-index: 101;
-  font-family: Helvetica, sans-serif;
-  font-size: 14px;
-  font-weight: normal;
-  text-align: center;
-  color: black;
+/* Inline rename input in the file sidebar */
+.nav-rename-input {
+  width: calc(100% - 4px);
   background: transparent;
   border: none;
   border-bottom: 1px solid #888;
   outline: none;
-  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+  padding: 0 2px;
   margin: 0;
+  display: inline-block;
 }
+.dark .nav-rename-input  { border-bottom-color: #aaa; }
+.contrast .nav-rename-input,
+.focus .nav-rename-input { border-bottom-color: #aaa; }

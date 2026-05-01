@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <title>Inky — web</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon-180.png">
 
     <script>
       // In Electron this class is set from preload.js. In the browser we just use "web".
@@ -149,6 +151,7 @@
   <!-- ace must be loaded before bundle.js since editorView.js uses ace as a global -->
   <script src="acesrc/ace.js" type="text/javascript" charset="utf-8"></script>
   <script src="acesrc/ext-language_tools.js"></script>
+  <script src="acesrc/ext-searchbox.js"></script>
 
   <script src="bundle.js"></script>
 </html>
