@@ -315,9 +315,11 @@ var currentThemeName = window.localStorage.getItem('theme') || 'main';
 
 function updateTheme(newTheme) {
     const themeClasses = ['dark', 'contrast', 'focus'];
-    themeClasses.forEach(t => $('.window').removeClass(t));
-    if (newTheme && newTheme.toLowerCase() !== 'main')
+    themeClasses.forEach(t => { $('.window').removeClass(t); document.body.classList.remove(t); });
+    if (newTheme && newTheme.toLowerCase() !== 'main') {
         $('.window').addClass(newTheme);
+        document.body.classList.add(newTheme);   // needed for dropdowns/modals appended to body
+    }
     currentThemeName = newTheme || 'main';
     window.localStorage.setItem('theme', currentThemeName);
     LiveCompiler.setEdited();
@@ -781,10 +783,16 @@ $(document).ready(() => {
                 dd.appendChild(mkSubmenuTrigger(cat.categoryName, function(sub) {
                     cat.snippets.forEach(function(sn) {
                         if (sn.separator) { sub.appendChild(mkSep()); return; }
-                        sub.appendChild(mkItem(sn.name, null, function() {
+                        // Plain item — no mouseenter→closeSub, which would kill the sub itself
+                        var el = document.createElement('div');
+                        el.className = 'web-dropdown-item';
+                        el.textContent = sn.name;
+                        el.addEventListener('click', function(e) {
+                            e.stopPropagation(); closeAll();
                             ace.edit('editor').insert(sn.ink);
                             ace.edit('editor').focus();
-                        }));
+                        });
+                        sub.appendChild(el);
                     });
                 }));
             });
