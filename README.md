@@ -29,9 +29,9 @@ This is a fork of the official [inkle/inky](https://github.com/inkle/inky) deskt
 
 1. Open **[https://dtsykunov.github.io/inky-web/](https://dtsykunov.github.io/inky-web/)** in any modern browser
 2. A sample story loads automatically — start editing right away
-3. Open your own `.ink` file(s) with the folder button, or drag them onto the window
+3. Open your own `.ink` file(s) via **File → Open…**, or drag them onto the window
 4. The right pane plays your story live; click choices to advance
-5. Download your finished story with the save button or Ctrl+S / Cmd+S
+5. Save your work with **File → Save / Download** or Ctrl+S / Cmd+S
 
 ## Multi-file projects
 
@@ -43,7 +43,9 @@ Use the **"Add new include"** button ("+") at the bottom of the sidebar to creat
 
 ## Exporting as a web player
 
-Click the **Export** button (↗ icon) in the toolbar to compile your story and download a standalone zip. Extract it and open `index.html` to play the finished story in any browser — no server, no dependencies.
+Go to **File → Export for web…** to compile your story and download a standalone zip. Extract it and open `index.html` to play the finished story in any browser — no server, no dependencies.
+
+Use **File → Export to JSON…** (Ctrl+Shift+S) to download just the compiled story JSON, for use with your own runtime or Unity integration.
 
 The exported player includes:
 - Save / load progress (via `localStorage`)
@@ -57,9 +59,17 @@ The story title in the player is taken from a `# title: My Story` tag at the top
 | Shortcut | Action |
 |---|---|
 | Ctrl+S / Cmd+S | Save / download current project |
+| Ctrl+Shift+S | Export compiled story JSON |
+| Ctrl+Shift+C | Story statistics (word count, knots, choices…) |
+| Ctrl+P / Cmd+P | Go to anything (file, knot, line number, text) |
+| Ctrl+. | Jump to next issue (error / warning / TODO) |
 | Alt+click | Jump to divert / knot definition |
-| Ctrl+P / Cmd+P | Go to anything (file, knot, line) |
-| Double-click (sidebar) | Rename a file |
+| Ctrl+F | Find in editor |
+| Ctrl+H | Find and replace in editor |
+| Ctrl+= / Ctrl+− | Zoom editor and player pane in / out |
+| Ctrl+0 | Reset zoom |
+| F1 | Show keyboard shortcuts |
+| Double-click (sidebar) | Rename a file inline |
 
 ## What is ink?
 
@@ -71,7 +81,7 @@ The story title in the player is taken from a `# title: My Story` tag at the top
 
 ## Project settings file
 
-To add custom ink snippets for your project, create a JSON file with the same name as your main ink file and a `.settings.json` extension (e.g. `my_story.settings.json`):
+To add custom ink snippets for your project, create a JSON file with the same name as your main ink file and a `.settings.json` extension (e.g. `my_story.settings.json`), then open it alongside your `.ink` files:
 
 ```json
 {
@@ -109,14 +119,14 @@ Node.js 18+ is required.
 
 Inky Web is built on:
 
-- [Electron](https://www.electronjs.org/) renderer code from the original Inky (reused as-is)
+- Original Inky renderer modules (`EditorView`, `PlayerView`, `NavView`, `GotoAnything`, etc.) — reused unchanged from the Electron version
 - [Ace](https://ace.c9.io/) code editor
 - [inkjs](https://github.com/y-lohse/inkjs) for in-browser ink compilation and story playback
 - [JSZip](https://stuk.github.io/jszip/) for multi-file zip downloads
 - [esbuild](https://esbuild.github.io/) for bundling
 - [GitHub Pages](https://pages.github.com/) for hosting
 
-Node built-ins (`fs`, `path`, `electron`, etc.) are shimmed so the original renderer modules run unchanged in the browser.
+Node built-ins (`fs`, `path`, `electron`, etc.) are shimmed so the original renderer modules run unchanged in the browser. See [`web/README.md`](web/README.md) for a detailed breakdown of what is reused, what was reimplemented, and what is omitted.
 
 ## Contributing
 
