@@ -73,7 +73,9 @@
   color: #aaa;
   margin-left: 16px;
 }
-.dark .web-dropdown-has-sub::after { color: #666; }
+.dark .web-dropdown-has-sub::after,
+.contrast .web-dropdown-has-sub::after,
+.focus .web-dropdown-has-sub::after { color: #666; }
 
 /* Keyboard shortcut hint aligned right in menu items */
 .web-dropdown-shortcut {
@@ -97,7 +99,9 @@
   font-family: Helvetica, sans-serif;
   font-size: 12px;
 }
-.dark .web-dropdown {
+.dark .web-dropdown,
+.contrast .web-dropdown,
+.focus .web-dropdown {
   background: #2b2b2b;
   border-color: #555;
   color: #ccc;
@@ -111,24 +115,32 @@
   color: #888;
   user-select: none;
 }
-.dark .web-dropdown-category { color: #777; }
+.dark .web-dropdown-category,
+.contrast .web-dropdown-category,
+.focus .web-dropdown-category { color: #777; }
 .web-dropdown-item {
   padding: 4px 18px;
   cursor: pointer;
   white-space: nowrap;
 }
 .web-dropdown-item:hover { background: #e8f0fe; }
-.dark .web-dropdown-item:hover { background: #3a3a5c; }
+.dark .web-dropdown-item:hover,
+.contrast .web-dropdown-item:hover,
+.focus .web-dropdown-item:hover { background: #3a3a5c; }
 .web-dropdown-sep {
   border-top: 1px solid #ddd;
   margin: 4px 0;
 }
-.dark .web-dropdown-sep { border-color: #444; }
+.dark .web-dropdown-sep,
+.contrast .web-dropdown-sep,
+.focus .web-dropdown-sep { border-color: #444; }
 .web-dropdown-item-sep {
   border-top: 1px solid #eee;
   margin: 2px 8px;
 }
-.dark .web-dropdown-item-sep { border-color: #3a3a3a; }
+.dark .web-dropdown-item-sep,
+.contrast .web-dropdown-item-sep,
+.focus .web-dropdown-item-sep { border-color: #3a3a3a; }
 .web-dropdown-toggle {
   display: flex;
   align-items: center;
@@ -138,7 +150,9 @@
   user-select: none;
 }
 .web-dropdown-toggle:hover { background: #e8f0fe; }
-.dark .web-dropdown-toggle:hover { background: #3a3a5c; }
+.dark .web-dropdown-toggle:hover,
+.contrast .web-dropdown-toggle:hover,
+.focus .web-dropdown-toggle:hover { background: #3a3a5c; }
 .web-dropdown-toggle input[type="checkbox"] { margin: 0; }
 
 /* ---- Modal overlays ----------------------------------------------------- */
@@ -164,7 +178,9 @@
   font-family: Helvetica, sans-serif;
   font-size: 13px;
 }
-.dark .web-modal-box { background: #2b2b2b; color: #ccc; }
+.dark .web-modal-box,
+.contrast .web-modal-box,
+.focus .web-modal-box { background: #2b2b2b; color: #ccc; }
 .web-modal-box h3 {
   margin: 0 0 12px;
   font-size: 15px;
@@ -182,7 +198,9 @@
   white-space: nowrap;
   padding-right: 14px;
 }
-.dark .web-modal-box td:first-child { color: #aaa; }
+.dark .web-modal-box td:first-child,
+.contrast .web-modal-box td:first-child,
+.focus .web-modal-box td:first-child { color: #aaa; }
 .web-modal-box th {
   padding-top: 10px;
   font-size: 10px;
