@@ -3,6 +3,8 @@
 // jQuery must be set as a global before any other module loads
 const $ = window.jQuery = require('../app/renderer/jquery-2.2.3.min.js');
 
+const electron = require('electron');
+
 require('../app/renderer/util.js');
 require('../app/renderer/split.js');
 require('../app/renderer/contextmenu.js');
@@ -121,6 +123,9 @@ NavHistory.setEvents({
 // LiveCompiler events
 // ----------------------------------------------------------------
 
+var allIssues = [];
+var currentIssueIdx = -1;
+
 function gotoIssue(issue) {
     InkProject.currentProject.showInkFile(issue.filename);
     EditorView.gotoLine(issue.lineNumber);
@@ -128,7 +133,10 @@ function gotoIssue(issue) {
 }
 
 LiveCompiler.setEvents({
-    resetting: () => {},
+    resetting: () => {
+        allIssues = [];
+        currentIssueIdx = -1;
+    },
     compileComplete: (sessionId) => {
         PlayerView.prepareForNewPlaythrough(sessionId);
         EditorView.clearErrors();
@@ -142,6 +150,7 @@ LiveCompiler.setEvents({
             PlayerView.addChoice(choice, () => LiveCompiler.choose(choice));
     },
     errorsAdded: (errors) => {
+        allIssues = allIssues.concat(errors);
         for (const error of errors) {
             if (error.filename === InkProject.currentProject.activeInkFile.relativePath())
                 EditorView.addError(error);
@@ -301,14 +310,18 @@ GotoAnything.setEvents({
 // Theme (persisted in localStorage)
 // ----------------------------------------------------------------
 
+var currentThemeName = window.localStorage.getItem('theme') || 'main';
+
 function updateTheme(newTheme) {
-    const themes = ['dark', 'contrast', 'focus'];
-    themes.forEach(t => $('.window').removeClass(t));
+    const themeClasses = ['dark', 'contrast', 'focus'];
+    themeClasses.forEach(t => $('.window').removeClass(t));
     if (newTheme && newTheme.toLowerCase() !== 'main')
         $('.window').addClass(newTheme);
+    currentThemeName = newTheme || 'main';
+    window.localStorage.setItem('theme', currentThemeName);
     LiveCompiler.setEdited();
 }
-updateTheme(window.localStorage.getItem('theme'));
+updateTheme(currentThemeName);
 
 // ----------------------------------------------------------------
 // Boot
@@ -327,6 +340,10 @@ $(document).ready(() => {
             ToolbarView.setTitle(name);
         },
         getAllFiles:  getAllFilesContent,
+        isDirty: () => {
+            var files = getAllFilesContent();
+            return Object.values(files).some(function(c) { return c.trim().length > 0; });
+        },
         newProject: () => {
             InkProject.startNew();
             // currentFilename updated by the newProject event handler above
@@ -399,6 +416,81 @@ $(document).ready(() => {
         var newName = window.prompt('Rename file:', inkFile.filename());
         if (newName) renameInkFile(inkFile, newName);
     });
+
+    // Ctrl+P → Go to Anything; Ctrl+. → Next Issue
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            e.preventDefault();
+            electron.ipcRenderer.emit('goto-anything');
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+            e.preventDefault();
+            if (allIssues.length === 0) return;
+            currentIssueIdx = (currentIssueIdx + 1) % allIssues.length;
+            gotoIssue(allIssues[currentIssueIdx]);
+        }
+    });
+
+    // Go to Anything toolbar button (right side)
+    (function() {
+        var btn = document.createElement('div');
+        btn.className = 'button web-btn';
+        btn.id        = 'web-goto-btn';
+        btn.title     = 'Go to anything (Ctrl+P)';
+        var icon = document.createElement('span');
+        icon.className = 'icon icon-search';
+        btn.appendChild(icon);
+        var rightButtons = document.querySelector('#toolbar .buttons.right');
+        if (rightButtons) rightButtons.appendChild(btn);
+        btn.addEventListener('click', function() {
+            electron.ipcRenderer.emit('goto-anything');
+        });
+    })();
+
+    // Next Issue toolbar button (right side)
+    (function() {
+        var btn = document.createElement('div');
+        btn.className = 'button web-btn';
+        btn.id        = 'web-next-issue-btn';
+        btn.title     = 'Jump to next issue (Ctrl+.)';
+        var icon = document.createElement('span');
+        icon.className = 'icon icon-attention';
+        btn.appendChild(icon);
+        var rightButtons = document.querySelector('#toolbar .buttons.right');
+        if (rightButtons) rightButtons.appendChild(btn);
+        btn.addEventListener('click', function() {
+            if (allIssues.length === 0) return;
+            currentIssueIdx = (currentIssueIdx + 1) % allIssues.length;
+            gotoIssue(allIssues[currentIssueIdx]);
+        });
+    })();
+
+    // Theme-cycle toolbar button (right side)
+    (function() {
+        var themeOrder  = ['main', 'dark', 'contrast', 'focus'];
+        var themeLabels = { main: 'Light', dark: 'Dark', contrast: 'Contrast', focus: 'Focus' };
+
+        var btn = document.createElement('div');
+        btn.className = 'button web-btn';
+        btn.id        = 'web-theme-btn';
+        var icon = document.createElement('span');
+        icon.className = 'icon icon-palette';
+        btn.appendChild(icon);
+        var rightButtons = document.querySelector('#toolbar .buttons.right');
+        if (rightButtons) rightButtons.appendChild(btn);
+
+        function refreshTitle() {
+            var next = themeOrder[(themeOrder.indexOf(currentThemeName) + 1) % themeOrder.length];
+            btn.title = 'Theme: ' + themeLabels[currentThemeName] + ' → click for ' + themeLabels[next];
+        }
+        refreshTitle();
+
+        btn.addEventListener('click', function() {
+            var next = themeOrder[(themeOrder.indexOf(currentThemeName) + 1) % themeOrder.length];
+            updateTheme(next);
+            refreshTitle();
+        });
+    })();
 
     // Restore the last auto-saved session (if any)
     var saved = WebFileIO.loadFromLocalStorage();

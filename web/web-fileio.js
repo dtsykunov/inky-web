@@ -17,12 +17,19 @@ var FILENAME_KEY   = 'inky-web-filename';
 //   getFilename()                    — get current main filename
 //   setFilename(name)                — update displayed main filename
 //   getAllFiles()                    — { relPath: content } for all open files
+//   isDirty()                        — optional: returns true if project has content
 function init(opts) {
+
+    function confirmReplace() {
+        if (!opts.isDirty || !opts.isDirty()) return true;
+        return window.confirm('Opening new files will replace the current project. Continue?');
+    }
 
     injectToolbarButtons();
 
     // Open button
     document.getElementById('web-open-btn').addEventListener('click', function() {
+        if (!confirmReplace()) return;
         document.getElementById('web-file-input').click();
     });
 
@@ -68,6 +75,7 @@ function init(opts) {
             return /\.(ink|txt)$/i.test(f.name);
         });
         if (!files.length) return;
+        if (!confirmReplace()) return;
         readFiles(files, function(filesMap, mainFilename) {
             opts.setFilename(mainFilename);
             opts.setFiles(filesMap, mainFilename);
