@@ -94,11 +94,12 @@ function reloadAndPlay() {
     project.files.forEach(function(f) { fileMap[f.relativePath()] = f.getValue(); });
 
     var compiler;
+    var mainFilename = project.mainInk.filename();
     try {
         compiler = new Compiler(
             project.mainInk.getValue(),
             new CompilerOptions(
-                project.mainInk.filename(),
+                mainFilename,
                 [],          // pluginNames
                 false,       // countAllVisits
                 null,        // errorHandler (we use compiler.errors after Compile())
@@ -110,14 +111,24 @@ function reloadAndPlay() {
         );
         story = compiler.Compile();
     } catch(e) {
+        // inkjs throws "Compilation failed." after collecting errors in compiler.errors.
+        // Surface those structured errors rather than the generic exception message.
+        var earlyIssues = [];
+        if (compiler) {
+            (compiler.errors        || []).forEach(function(m) { earlyIssues.push(parseMessage(m, 'ERROR',   mainFilename)); });
+            (compiler.warnings      || []).forEach(function(m) { earlyIssues.push(parseMessage(m, 'WARNING', mainFilename)); });
+            (compiler.authorMessages|| []).forEach(function(m) { earlyIssues.push(parseMessage(m, 'TODO',    mainFilename)); });
+        }
+        if (earlyIssues.length === 0)
+            earlyIssues = [{ type: 'ERROR', filename: mainFilename, lineNumber: 1, message: e.message || String(e) }];
+        events.errorsAdded && events.errorsAdded(earlyIssues);
         events.compilerBusyChanged && events.compilerBusyChanged(false);
-        events.unexpectedError && events.unexpectedError(e.message || String(e));
+        events.exitDueToError && events.exitDueToError();
         return;
     }
 
     // Collect compile-time errors/warnings/TODOs
     var issues = [];
-    var mainFilename = project.mainInk.filename();
     (compiler.errors        || []).forEach(function(m) { issues.push(parseMessage(m, 'ERROR',   mainFilename)); });
     (compiler.warnings      || []).forEach(function(m) { issues.push(parseMessage(m, 'WARNING', mainFilename)); });
     (compiler.authorMessages|| []).forEach(function(m) { issues.push(parseMessage(m, 'TODO',    mainFilename)); });
