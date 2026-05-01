@@ -376,40 +376,41 @@ $(document).ready(() => {
     PlayerView.setAnimationEnabled(animation);
     if (!tagsVisible) $('#main').addClass('hideTags');
 
-    // Click the toolbar title to rename the active file inline
-    (function() {
-        var $title = $('h1.title');
-        $title.attr('title', 'Click to rename');
-        var $input = $('<input id="title-rename-input" type="text" spellcheck="false">').insertAfter($title);
-
-        function startRename() {
-            var name = InkProject.currentProject.activeInkFile.filename();
-            var display = /\.ink$/i.test(name) ? name.slice(0, -4) : name;
-            $title.hide();
-            $input.val(display).show().focus().select();
-        }
-        function commitRename() {
-            $input.hide();
-            $title.show();
-            var inkFile = InkProject.currentProject.activeInkFile;
-            if (inkFile) renameInkFile(inkFile, $input.val());
-        }
-        $title.on('click', startRename);
-        $input.on('keydown', function(e) {
-            if (e.key === 'Enter')  { e.preventDefault(); commitRename(); }
-            if (e.key === 'Escape') { $input.hide(); $title.show(); }
-        });
-        $input.on('blur', function() { if ($input.is(':visible')) commitRename(); });
-    })();
-
-    // Double-click a file in the sidebar to rename it
+    // Double-click a file in the sidebar to rename it inline
     $(document).on('dblclick', '#file-nav-wrapper .nav-group-item', function(e) {
         e.preventDefault();
-        var fileId  = parseInt($(this).attr('data-file-id'));
+        e.stopPropagation();
+        var $item   = $(this);
+        var fileId  = parseInt($item.attr('data-file-id'));
         var inkFile = InkProject.currentProject.inkFileWithId(fileId);
         if (!inkFile) return;
-        var newName = window.prompt('Rename file:', inkFile.filename());
-        if (newName) renameInkFile(inkFile, newName);
+
+        var $filename = $item.find('.filename');
+        var display = inkFile.filename().replace(/\.ink$/i, '');
+
+        var $input = $('<input class="nav-rename-input" type="text" spellcheck="false">');
+        $input.val(display);
+        $filename.hide();
+        $input.insertAfter($filename);
+        $input.focus().select();
+
+        var done = false;
+        function commit() {
+            if (done) return; done = true;
+            $input.remove(); $filename.show();
+            var val = $input.val().trim();
+            if (val) renameInkFile(inkFile, val);
+        }
+        function cancel() {
+            if (done) return; done = true;
+            $input.remove(); $filename.show();
+        }
+        $input.on('keydown', function(e) {
+            if (e.key === 'Enter')  { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+        });
+        $input.on('blur', commit);
+        $input.on('click mousedown', function(e) { e.stopPropagation(); });
     });
 
     // Keyboard shortcuts
