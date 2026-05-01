@@ -10,9 +10,196 @@
 .web h1.title {
   pointer-events: auto;
   cursor: pointer;
+  top: 24px; /* shifted down by menubar height */
 }
 .web h1.title:hover {
   text-decoration: underline dotted #888;
+}
+
+/* ---- Menu bar ----------------------------------------------------------- */
+#web-menubar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  align-items: stretch;
+  z-index: 200;
+  font-family: Helvetica, sans-serif;
+  font-size: 12px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.dark #web-menubar {
+  background: #2b2b2b;
+  border-bottom-color: #444;
+  color: #ddd;
+}
+.web-menubar-item {
+  padding: 0 10px;
+  line-height: 22px;
+  cursor: default;
+  color: inherit;
+}
+.web-menubar-item:hover,
+.web-menubar-item.active {
+  background: #0060df;
+  color: #fff;
+}
+.dark .web-menubar-item:hover,
+.dark .web-menubar-item.active {
+  background: #3a3a7c;
+  color: #fff;
+}
+
+/* Layout: push toolbar, main content, and rename input below menubar */
+.web #toolbar { top: 22px; }
+.web #main    { top: 78px; } /* 22px menubar + 56px toolbar */
+
+/* Submenu trigger arrow */
+.web-dropdown-has-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.web-dropdown-has-sub::after {
+  content: '▶';
+  font-size: 9px;
+  color: #aaa;
+  margin-left: 16px;
+}
+.dark .web-dropdown-has-sub::after { color: #666; }
+
+/* Keyboard shortcut hint aligned right in menu items */
+.web-dropdown-shortcut {
+  color: #aaa;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ---- Dropdown menus ----------------------------------------------------- */
+.web-dropdown {
+  position: fixed;
+  z-index: 500;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  min-width: 200px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 4px 0;
+  font-family: Helvetica, sans-serif;
+  font-size: 12px;
+}
+.dark .web-dropdown {
+  background: #2b2b2b;
+  border-color: #555;
+  color: #ccc;
+}
+.web-dropdown-category {
+  padding: 6px 12px 2px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888;
+  user-select: none;
+}
+.dark .web-dropdown-category { color: #777; }
+.web-dropdown-item {
+  padding: 4px 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.web-dropdown-item:hover { background: #e8f0fe; }
+.dark .web-dropdown-item:hover { background: #3a3a5c; }
+.web-dropdown-sep {
+  border-top: 1px solid #ddd;
+  margin: 4px 0;
+}
+.dark .web-dropdown-sep { border-color: #444; }
+.web-dropdown-item-sep {
+  border-top: 1px solid #eee;
+  margin: 2px 8px;
+}
+.dark .web-dropdown-item-sep { border-color: #3a3a3a; }
+.web-dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.web-dropdown-toggle:hover { background: #e8f0fe; }
+.dark .web-dropdown-toggle:hover { background: #3a3a5c; }
+.web-dropdown-toggle input[type="checkbox"] { margin: 0; }
+
+/* ---- Modal overlays ----------------------------------------------------- */
+.web-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.web-modal.hidden { display: none; }
+.web-modal-box {
+  background: #fff;
+  border-radius: 6px;
+  padding: 20px 24px;
+  min-width: 300px;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  font-family: Helvetica, sans-serif;
+  font-size: 13px;
+}
+.dark .web-modal-box { background: #2b2b2b; color: #ccc; }
+.web-modal-box h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.web-modal-box table { width: 100%; border-collapse: collapse; }
+.web-modal-box td, .web-modal-box th {
+  padding: 3px 8px;
+  text-align: left;
+}
+.web-modal-box td:first-child {
+  font-family: monospace;
+  font-size: 11px;
+  color: #555;
+  white-space: nowrap;
+  padding-right: 14px;
+}
+.dark .web-modal-box td:first-child { color: #aaa; }
+.web-modal-box th {
+  padding-top: 10px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+.web-modal-note {
+  font-size: 11px;
+  color: #999;
+  margin: 10px 0 4px;
+}
+.web-modal-close {
+  display: block;
+  margin: 14px auto 0;
+  padding: 5px 18px;
+  font-size: 12px;
+  cursor: pointer;
 }
 
 /* Inline rename input — mirrors h1.title geometry exactly */
@@ -22,7 +209,7 @@
   left: 70px;
   right: 70px;
   height: 30px;
-  top: 2px;
+  top: 24px;
   z-index: 101;
   font-family: Helvetica, sans-serif;
   font-size: 14px;

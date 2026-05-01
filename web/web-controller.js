@@ -22,6 +22,7 @@ const i18n                = require('../app/renderer/i18n.js');
 const LiveCompiler = require('./web-liveCompiler.js').WebLiveCompiler;
 const WebFileIO    = require('./web-fileio.js').WebFileIO;
 const WebExport    = require('./web-export.js').WebExport;
+const WebSnippets  = require('./web-snippets.js').snippets;
 
 // Main filename shown in the toolbar and used for downloads/localStorage
 var currentFilename = 'Untitled.ink';
@@ -324,6 +325,14 @@ function updateTheme(newTheme) {
 updateTheme(currentThemeName);
 
 // ----------------------------------------------------------------
+// View settings (persisted in localStorage)
+// ----------------------------------------------------------------
+
+var autoComplete = localStorage.getItem('autocomplete') !== 'false';
+var animation    = localStorage.getItem('animation')    !== 'false';
+var tagsVisible  = localStorage.getItem('tags')         !== 'false';
+
+// ----------------------------------------------------------------
 // Boot
 // ----------------------------------------------------------------
 
@@ -346,68 +355,42 @@ $(document).ready(() => {
         },
         newProject: () => {
             InkProject.startNew();
-            // currentFilename updated by the newProject event handler above
             WebFileIO.autosave(currentFilename, getAllFilesContent());
         },
     });
 
-    // Export-for-web button
-    (function() {
-        var btn  = document.createElement('div');
-        btn.className = 'button web-btn';
-        btn.id        = 'web-export-btn';
-        btn.title     = 'Export as web player';
-        var icon = document.createElement('span');
-        icon.className = 'icon icon-export';
-        btn.appendChild(icon);
-        var leftButtons = document.querySelector('#toolbar .buttons.left');
-        if (leftButtons) leftButtons.appendChild(btn);
-
-        btn.addEventListener('click', function() {
-            WebExport.exportForWeb(
-                InkProject.currentProject,
-                function(msg) { alert(msg); },
-                null
-            );
-        });
-    })();
+    // Apply persisted view settings
+    EditorView.setAutoCompleteDisabled(!autoComplete);
+    PlayerView.setAnimationEnabled(animation);
+    if (!tagsVisible) $('#main').addClass('hideTags');
 
     // Click the toolbar title to rename the active file inline
     (function() {
         var $title = $('h1.title');
         $title.attr('title', 'Click to rename');
-
-        var $input = $('<input id="title-rename-input" type="text" spellcheck="false">')
-            .insertAfter($title);
+        var $input = $('<input id="title-rename-input" type="text" spellcheck="false">').insertAfter($title);
 
         function startRename() {
             var name = InkProject.currentProject.activeInkFile.filename();
-            // Strip .ink for cleaner editing; other extensions are kept as-is
             var display = /\.ink$/i.test(name) ? name.slice(0, -4) : name;
             $title.hide();
             $input.val(display).show().focus().select();
         }
-
         function commitRename() {
             $input.hide();
             $title.show();
             var inkFile = InkProject.currentProject.activeInkFile;
             if (inkFile) renameInkFile(inkFile, $input.val());
         }
-
         $title.on('click', startRename);
-
         $input.on('keydown', function(e) {
             if (e.key === 'Enter')  { e.preventDefault(); commitRename(); }
             if (e.key === 'Escape') { $input.hide(); $title.show(); }
         });
-        // Commit on blur unless the input was already hidden (Enter/Escape path)
-        $input.on('blur', function() {
-            if ($input.is(':visible')) commitRename();
-        });
+        $input.on('blur', function() { if ($input.is(':visible')) commitRename(); });
     })();
 
-    // Double-click a file in the sidebar to rename it (same logic)
+    // Double-click a file in the sidebar to rename it
     $(document).on('dblclick', '#file-nav-wrapper .nav-group-item', function(e) {
         e.preventDefault();
         var fileId  = parseInt($(this).attr('data-file-id'));
@@ -417,21 +400,34 @@ $(document).ready(() => {
         if (newName) renameInkFile(inkFile, newName);
     });
 
-    // Ctrl+P → Go to Anything; Ctrl+. → Next Issue
+    // Keyboard shortcuts
     document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        var mod = e.ctrlKey || e.metaKey;
+        if (mod && !e.shiftKey && e.key === 'p') {
             e.preventDefault();
             electron.ipcRenderer.emit('goto-anything');
         }
-        if ((e.ctrlKey || e.metaKey) && e.key === '.') {
+        if (mod && !e.shiftKey && e.key === '.') {
             e.preventDefault();
             if (allIssues.length === 0) return;
             currentIssueIdx = (currentIssueIdx + 1) % allIssues.length;
             gotoIssue(allIssues[currentIssueIdx]);
         }
+        if (mod && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            WebExport.exportJson(InkProject.currentProject, function(msg) { alert(msg); });
+        }
+        if (mod && e.shiftKey && e.key === 'C') {
+            e.preventDefault();
+            showStatsModal();
+        }
+        if (e.key === 'F1') {
+            e.preventDefault();
+            showShortcutsModal();
+        }
     });
 
-    // Go to Anything toolbar button (right side)
+    // Go to Anything button (right toolbar)
     (function() {
         var btn = document.createElement('div');
         btn.className = 'button web-btn';
@@ -440,14 +436,12 @@ $(document).ready(() => {
         var icon = document.createElement('span');
         icon.className = 'icon icon-search';
         btn.appendChild(icon);
-        var rightButtons = document.querySelector('#toolbar .buttons.right');
-        if (rightButtons) rightButtons.appendChild(btn);
-        btn.addEventListener('click', function() {
-            electron.ipcRenderer.emit('goto-anything');
-        });
+        var right = document.querySelector('#toolbar .buttons.right');
+        if (right) right.appendChild(btn);
+        btn.addEventListener('click', function() { electron.ipcRenderer.emit('goto-anything'); });
     })();
 
-    // Next Issue toolbar button (right side)
+    // Next Issue button (right toolbar)
     (function() {
         var btn = document.createElement('div');
         btn.className = 'button web-btn';
@@ -456,8 +450,8 @@ $(document).ready(() => {
         var icon = document.createElement('span');
         icon.className = 'icon icon-attention';
         btn.appendChild(icon);
-        var rightButtons = document.querySelector('#toolbar .buttons.right');
-        if (rightButtons) rightButtons.appendChild(btn);
+        var right = document.querySelector('#toolbar .buttons.right');
+        if (right) right.appendChild(btn);
         btn.addEventListener('click', function() {
             if (allIssues.length === 0) return;
             currentIssueIdx = (currentIssueIdx + 1) % allIssues.length;
@@ -465,30 +459,325 @@ $(document).ready(() => {
         });
     })();
 
-    // Theme-cycle toolbar button (right side)
+    // ---- Modal helpers ---------------------------------------------------
+    function buildModal(title, rows) {
+        var overlay = document.createElement('div');
+        overlay.className = 'web-modal';
+        var box = document.createElement('div');
+        box.className = 'web-modal-box';
+        var h3 = document.createElement('h3');
+        h3.textContent = title;
+        box.appendChild(h3);
+        var table = document.createElement('table');
+        rows.forEach(function(row) {
+            var tr = document.createElement('tr');
+            if (row[1] === null) {
+                var th = document.createElement('th');
+                th.colSpan = 2;
+                th.textContent = row[0];
+                tr.appendChild(th);
+            } else {
+                var tdKey = document.createElement('td');
+                tdKey.textContent = row[0];
+                var tdVal = document.createElement('td');
+                tdVal.textContent = row[1];
+                tr.appendChild(tdKey);
+                tr.appendChild(tdVal);
+            }
+            table.appendChild(tr);
+        });
+        box.appendChild(table);
+        var closeBtn = document.createElement('button');
+        closeBtn.className = 'web-modal-close';
+        closeBtn.textContent = 'Close';
+        closeBtn.addEventListener('click', function() { overlay.remove(); });
+        box.appendChild(closeBtn);
+        overlay.appendChild(box);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.addEventListener('keydown', function onEsc(e) {
+            if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+        });
+        return overlay;
+    }
+
+    function computeStats() {
+        var project = InkProject.currentProject;
+        var words = 0, knots = 0, stitches = 0, choices = 0, gathers = 0, todos = 0;
+        project.files.forEach(function(f) {
+            f.getValue().split('\n').forEach(function(line) {
+                var t = line.trim();
+                if (/^===/.test(t))        { knots++;    return; }
+                if (/^=\s+\w/.test(t))     { stitches++; return; }
+                if (/^[*+]/.test(t))       { choices++; }
+                if (/^-(\s|$)/.test(t))    { gathers++; }
+                if (/\bTODO\s*:/i.test(t)) { todos++; }
+                if (!/^(~|VAR\b|CONST\b|LIST\b|INCLUDE\b|===|=\s|\/\/)/.test(t)) {
+                    var w = t.replace(/\{[^}]*\}/g, ' ').replace(/\[.*?\]/g, ' ')
+                             .replace(/^[*+>-]+\s*/, '').replace(/#.*$/, '')
+                             .trim().split(/\s+/).filter(function(s) { return s.length > 0; });
+                    words += w.length;
+                }
+            });
+        });
+        return { words: words, knots: knots, stitches: stitches, choices: choices, gathers: gathers, todos: todos };
+    }
+
+    function showStatsModal() {
+        var st = computeStats();
+        var modal = buildModal('Story Statistics', [
+            ['Words', st.words], ['Knots', st.knots], ['Stitches', st.stitches],
+            ['Choices', st.choices], ['Gathers', st.gathers], ['TODOs', st.todos],
+        ]);
+        var note = document.createElement('p');
+        note.className = 'web-modal-note';
+        note.textContent = 'Counts are approximate (source-level parsing).';
+        modal.querySelector('.web-modal-box').insertBefore(note, modal.querySelector('.web-modal-close'));
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+    }
+
+    function showShortcutsModal() {
+        var modal = buildModal('Keyboard Shortcuts', [
+            ['Navigation', null],
+            ['Ctrl+P', 'Go to anything'],
+            ['Alt+Click', 'Jump to definition'],
+            ['Ctrl+.', 'Next issue'],
+            ['Editing', null],
+            ['Ctrl+S', 'Save / download'],
+            ['Ctrl+Shift+S', 'Export story.json'],
+            ['Ctrl+Shift+C', 'Story statistics'],
+            ['Ctrl+F', 'Find'],
+            ['Ctrl+H', 'Find & replace'],
+            ['Files', null],
+            ['Click title', 'Rename active file'],
+            ['Dbl-click sidebar', 'Rename file'],
+        ]);
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+    }
+
+    // ---- Menu bar --------------------------------------------------------
     (function() {
-        var themeOrder  = ['main', 'dark', 'contrast', 'focus'];
-        var themeLabels = { main: 'Light', dark: 'Dark', contrast: 'Contrast', focus: 'Focus' };
+        var bar = document.createElement('div');
+        bar.id = 'web-menubar';
+        var win = document.querySelector('.window');
+        win.insertBefore(bar, win.firstChild);
 
-        var btn = document.createElement('div');
-        btn.className = 'button web-btn';
-        btn.id        = 'web-theme-btn';
-        var icon = document.createElement('span');
-        icon.className = 'icon icon-palette';
-        btn.appendChild(icon);
-        var rightButtons = document.querySelector('#toolbar .buttons.right');
-        if (rightButtons) rightButtons.appendChild(btn);
+        var activeItem     = null;
+        var activeDropdown = null;
+        var currentSub     = null;
+        var currentSubTrig = null;
 
-        function refreshTitle() {
-            var next = themeOrder[(themeOrder.indexOf(currentThemeName) + 1) % themeOrder.length];
-            btn.title = 'Theme: ' + themeLabels[currentThemeName] + ' → click for ' + themeLabels[next];
+        function closeSub() {
+            if (currentSub) { currentSub.remove(); currentSub = null; currentSubTrig = null; }
         }
-        refreshTitle();
 
-        btn.addEventListener('click', function() {
-            var next = themeOrder[(themeOrder.indexOf(currentThemeName) + 1) % themeOrder.length];
-            updateTheme(next);
-            refreshTitle();
+        function closeAll() {
+            closeSub();
+            if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; }
+            if (activeItem)     { activeItem.classList.remove('active'); activeItem = null; }
+        }
+
+        document.addEventListener('click', closeAll);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAll(); });
+
+        function openMenu(item, buildFn) {
+            if (activeItem === item) { closeAll(); return; }
+            closeAll();
+            activeItem = item;
+            item.classList.add('active');
+            var dd = document.createElement('div');
+            dd.className = 'web-dropdown';
+            activeDropdown = dd;
+            buildFn(dd);
+            document.body.appendChild(dd);
+            var r = item.getBoundingClientRect();
+            dd.style.left  = r.left + 'px';
+            dd.style.top   = r.bottom + 'px';
+            dd.style.right = 'auto';
+        }
+
+        function mkItem(label, shortcut, onClick) {
+            var el = document.createElement('div');
+            el.className = 'web-dropdown-item';
+            if (shortcut) {
+                el.style.display = 'flex';
+                el.style.justifyContent = 'space-between';
+                el.style.gap = '24px';
+                var ls = document.createElement('span');
+                ls.textContent = label;
+                var ss = document.createElement('span');
+                ss.className = 'web-dropdown-shortcut';
+                ss.textContent = shortcut;
+                el.appendChild(ls);
+                el.appendChild(ss);
+            } else {
+                el.textContent = label;
+            }
+            el.addEventListener('mouseenter', closeSub);
+            if (onClick) el.addEventListener('click', function(e) { e.stopPropagation(); closeAll(); onClick(); });
+            return el;
+        }
+
+        function mkSep() {
+            var el = document.createElement('div');
+            el.className = 'web-dropdown-sep';
+            return el;
+        }
+
+        function mkLabel(text) {
+            var el = document.createElement('div');
+            el.className = 'web-dropdown-category';
+            el.textContent = text;
+            return el;
+        }
+
+        function mkToggle(label, getVal, setVal) {
+            var row = document.createElement('label');
+            row.className = 'web-dropdown-toggle';
+            var check = document.createElement('input');
+            check.type = 'checkbox';
+            check.checked = getVal();
+            var span = document.createElement('span');
+            span.textContent = label;
+            row.appendChild(check);
+            row.appendChild(span);
+            row.addEventListener('click', function(e) { e.stopPropagation(); });
+            row.addEventListener('mouseenter', closeSub);
+            check.addEventListener('change', function() { setVal(check.checked); });
+            return row;
+        }
+
+        function mkRadio(label, name, checked, onChange) {
+            var row = document.createElement('label');
+            row.className = 'web-dropdown-toggle';
+            var radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = name;
+            radio.checked = checked;
+            radio.addEventListener('change', function() { if (radio.checked) { closeAll(); onChange(); } });
+            var span = document.createElement('span');
+            span.textContent = label;
+            row.appendChild(radio);
+            row.appendChild(span);
+            row.addEventListener('click', function(e) { e.stopPropagation(); });
+            row.addEventListener('mouseenter', closeSub);
+            return row;
+        }
+
+        function mkSubmenuTrigger(label, buildSubFn) {
+            var el = document.createElement('div');
+            el.className = 'web-dropdown-item web-dropdown-has-sub';
+            el.textContent = label;
+            el.addEventListener('mouseenter', function() {
+                if (currentSubTrig === el) return;
+                closeSub();
+                currentSubTrig = el;
+                var sub = document.createElement('div');
+                sub.className = 'web-dropdown web-dropdown-sub';
+                buildSubFn(sub);
+                document.body.appendChild(sub);
+                currentSub = sub;
+                var r = el.getBoundingClientRect();
+                sub.style.left  = r.right + 'px';
+                sub.style.top   = r.top + 'px';
+                sub.style.right = 'auto';
+                var sr = sub.getBoundingClientRect();
+                if (sr.right > window.innerWidth) {
+                    sub.style.left = Math.max(0, r.left - sr.width) + 'px';
+                }
+                if (sr.bottom > window.innerHeight) {
+                    sub.style.top = Math.max(0, window.innerHeight - sr.height) + 'px';
+                }
+            });
+            return el;
+        }
+
+        function buildFileMenu(dd) {
+            dd.appendChild(mkItem('New', null, function() { document.getElementById('web-new-btn').click(); }));
+            dd.appendChild(mkItem('Open…', 'Ctrl+O', function() { document.getElementById('web-open-btn').click(); }));
+            dd.appendChild(mkItem('Save / Download', 'Ctrl+S', function() { document.getElementById('web-save-btn').click(); }));
+            dd.appendChild(mkSep());
+            dd.appendChild(mkItem('Export to JSON…', 'Ctrl+Shift+S', function() {
+                WebExport.exportJson(InkProject.currentProject, function(msg) { alert(msg); });
+            }));
+            dd.appendChild(mkItem('Export for web…', null, function() {
+                WebExport.exportForWeb(InkProject.currentProject, function(msg) { alert(msg); }, null);
+            }));
+        }
+
+        function buildEditMenu(dd) {
+            dd.appendChild(mkItem('Find…', 'Ctrl+F', function() { ace.edit('editor').execCommand('find'); }));
+            dd.appendChild(mkItem('Find & Replace…', 'Ctrl+H', function() { ace.edit('editor').execCommand('replace'); }));
+        }
+
+        function buildViewMenu(dd) {
+            dd.appendChild(mkLabel('Theme'));
+            var themeLabels = { main: 'Light', dark: 'Dark', contrast: 'Contrast', focus: 'Focus' };
+            ['main', 'dark', 'contrast', 'focus'].forEach(function(t) {
+                dd.appendChild(mkRadio(themeLabels[t], 'web-theme-r', currentThemeName === t, function() { updateTheme(t); }));
+            });
+            dd.appendChild(mkSep());
+            dd.appendChild(mkLabel('Options'));
+            dd.appendChild(mkToggle('Autocomplete', function() { return autoComplete; }, function(v) {
+                autoComplete = v; EditorView.setAutoCompleteDisabled(!v); localStorage.setItem('autocomplete', v);
+            }));
+            dd.appendChild(mkToggle('Play view animation', function() { return animation; }, function(v) {
+                animation = v; PlayerView.setAnimationEnabled(v); localStorage.setItem('animation', v);
+            }));
+        }
+
+        function buildStoryMenu(dd) {
+            dd.appendChild(mkItem('Go to anything…', 'Ctrl+P', function() { electron.ipcRenderer.emit('goto-anything'); }));
+            dd.appendChild(mkItem('Next Issue', 'Ctrl+.', function() {
+                if (allIssues.length === 0) return;
+                currentIssueIdx = (currentIssueIdx + 1) % allIssues.length;
+                gotoIssue(allIssues[currentIssueIdx]);
+            }));
+            dd.appendChild(mkSep());
+            dd.appendChild(mkToggle('Show tags', function() { return tagsVisible; }, function(v) {
+                tagsVisible = v;
+                if (v) $('#main').removeClass('hideTags'); else $('#main').addClass('hideTags');
+                localStorage.setItem('tags', v);
+            }));
+            dd.appendChild(mkSep());
+            dd.appendChild(mkItem('Story statistics…', 'Ctrl+Shift+C', function() { showStatsModal(); }));
+        }
+
+        function buildInkMenu(dd) {
+            WebSnippets.forEach(function(cat) {
+                if (cat.separator) { dd.appendChild(mkSep()); return; }
+                if (!cat.categoryName || !cat.snippets) return;
+                dd.appendChild(mkSubmenuTrigger(cat.categoryName, function(sub) {
+                    cat.snippets.forEach(function(sn) {
+                        if (sn.separator) { sub.appendChild(mkSep()); return; }
+                        sub.appendChild(mkItem(sn.name, null, function() {
+                            ace.edit('editor').insert(sn.ink);
+                            ace.edit('editor').focus();
+                        }));
+                    });
+                }));
+            });
+        }
+
+        function buildHelpMenu(dd) {
+            dd.appendChild(mkItem('Keyboard shortcuts…', 'F1', function() { showShortcutsModal(); }));
+        }
+
+        [
+            { label: 'File',  build: buildFileMenu  },
+            { label: 'Edit',  build: buildEditMenu  },
+            { label: 'View',  build: buildViewMenu  },
+            { label: 'Story', build: buildStoryMenu },
+            { label: 'Ink',   build: buildInkMenu   },
+            { label: 'Help',  build: buildHelpMenu  },
+        ].forEach(function(m) {
+            var item = document.createElement('div');
+            item.className = 'web-menubar-item';
+            item.textContent = m.label;
+            bar.appendChild(item);
+            item.addEventListener('click', function(e) { e.stopPropagation(); openMenu(item, m.build); });
+            item.addEventListener('mouseenter', function() { if (activeItem && activeItem !== item) openMenu(item, m.build); });
         });
     })();
 
