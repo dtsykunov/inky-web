@@ -18,6 +18,7 @@ var FILENAME_KEY   = 'inky-web-filename';
 //   setFilename(name)                — update displayed main filename
 //   getAllFiles()                    — { relPath: content } for all open files
 //   isDirty()                        — optional: returns true if project has content
+// Returns { doNew, doOpen, doSave } action functions for use by the menu bar.
 function init(opts) {
 
     function confirmReplace() {
@@ -25,15 +26,16 @@ function init(opts) {
         return window.confirm('Opening new files will replace the current project. Continue?');
     }
 
-    injectToolbarButtons();
+    // Hidden file input
+    var input = document.createElement('input');
+    input.type     = 'file';
+    input.id       = 'web-file-input';
+    input.accept   = '.ink,.txt';
+    input.multiple = true;
+    input.style.display = 'none';
+    document.body.appendChild(input);
 
-    // Open button
-    document.getElementById('web-open-btn').addEventListener('click', function() {
-        if (!confirmReplace()) return;
-        document.getElementById('web-file-input').click();
-    });
-
-    document.getElementById('web-file-input').addEventListener('change', function(e) {
+    input.addEventListener('change', function(e) {
         var files = Array.from(e.target.files);
         if (!files.length) return;
         readFiles(files, function(filesMap, mainFilename) {
@@ -44,22 +46,25 @@ function init(opts) {
         e.target.value = '';
     });
 
-    // Save / Download button — downloads every open file
-    document.getElementById('web-save-btn').addEventListener('click', function() {
-        downloadAllFiles(opts.getAllFiles());
-    });
-
-    // New button — creates a completely fresh project
-    document.getElementById('web-new-btn').addEventListener('click', function() {
+    function doNew() {
         if (!window.confirm('Start a new story? Unsaved changes will be lost.')) return;
         opts.newProject();
-    });
+    }
+
+    function doOpen() {
+        if (!confirmReplace()) return;
+        input.click();
+    }
+
+    function doSave() {
+        downloadAllFiles(opts.getAllFiles());
+    }
 
     // Ctrl+S / Cmd+S → download all
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
-            downloadAllFiles(opts.getAllFiles());
+            doSave();
         }
     });
 
@@ -82,6 +87,8 @@ function init(opts) {
             saveToLocalStorage(mainFilename, filesMap);
         });
     });
+
+    return { doNew: doNew, doOpen: doOpen, doSave: doSave };
 }
 
 // Called by web-controller on every editor change
@@ -190,39 +197,6 @@ function triggerDownload(filename, content) {
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
-function makeButton(id, title, iconClass) {
-    var btn  = document.createElement('div');
-    btn.className = 'button web-btn';
-    btn.id        = id;
-    btn.title     = title;
-    var icon = document.createElement('span');
-    icon.className = 'icon ' + iconClass;
-    btn.appendChild(icon);
-    return btn;
-}
-
-function injectToolbarButtons() {
-
-    // Hidden file input (appended to body, not toolbar)
-    var input = document.createElement('input');
-    input.type     = 'file';
-    input.id       = 'web-file-input';
-    input.accept   = '.ink,.txt';
-    input.multiple = true;
-    input.style.display = 'none';
-    document.body.appendChild(input);
-
-    var newBtn  = makeButton('web-new-btn',  'New story',              'icon-doc-text');
-    var openBtn = makeButton('web-open-btn', 'Open .ink file(s)',      'icon-folder');
-    var saveBtn = makeButton('web-save-btn', 'Save / Download (.ink)', 'icon-download');
-
-    var leftButtons = document.querySelector('#toolbar .buttons.left');
-    if (leftButtons) {
-        leftButtons.appendChild(newBtn);
-        leftButtons.appendChild(openBtn);
-        leftButtons.appendChild(saveBtn);
-    }
-}
 
 exports.WebFileIO = {
     init:                 init,

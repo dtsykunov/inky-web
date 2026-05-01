@@ -341,7 +341,7 @@ $(document).ready(() => {
     NavView.setKnots(InkProject.currentProject.mainInk);
     ToolbarView.setBusySpinnerVisible(false);
 
-    WebFileIO.init({
+    var fileActions = WebFileIO.init({
         setFiles:    setAllFiles,
         getFilename: () => currentFilename,
         setFilename: (name) => {
@@ -358,6 +358,18 @@ $(document).ready(() => {
             WebFileIO.autosave(currentFilename, getAllFilesContent());
         },
     });
+
+    // Zoom — scales both editor and player panes (not menubar/toolbar)
+    var zoomSizes = [10, 11, 12, 13, 14, 16, 18, 20, 24];
+    var zoomIdx   = Math.max(0, Math.min(zoomSizes.length - 1,
+        parseInt(localStorage.getItem('zoom-idx') || '4', 10)));
+    function applyZoom() {
+        var px = zoomSizes[zoomIdx] + 'px';
+        ace.edit('editor').setFontSize(px);
+        document.getElementById('player').style.fontSize = px;
+        localStorage.setItem('zoom-idx', zoomIdx);
+    }
+    applyZoom();
 
     // Apply persisted view settings
     EditorView.setAutoCompleteDisabled(!autoComplete);
@@ -424,6 +436,21 @@ $(document).ready(() => {
         if (e.key === 'F1') {
             e.preventDefault();
             showShortcutsModal();
+        }
+        if (mod && !e.shiftKey) {
+            if (e.key === '=' || e.key === '+') {
+                e.preventDefault();
+                zoomIdx = Math.min(zoomIdx + 1, zoomSizes.length - 1);
+                applyZoom();
+            } else if (e.key === '-') {
+                e.preventDefault();
+                zoomIdx = Math.max(zoomIdx - 1, 0);
+                applyZoom();
+            } else if (e.key === '0') {
+                e.preventDefault();
+                zoomIdx = 4;
+                applyZoom();
+            }
         }
     });
 
@@ -548,6 +575,8 @@ $(document).ready(() => {
             ['Ctrl+Shift+C', 'Story statistics'],
             ['Ctrl+F', 'Find'],
             ['Ctrl+H', 'Find & replace'],
+            ['Ctrl+= / Ctrl+−', 'Zoom in / out'],
+            ['Ctrl+0', 'Reset zoom'],
             ['Files', null],
             ['Click title', 'Rename active file'],
             ['Dbl-click sidebar', 'Rename file'],
@@ -694,9 +723,9 @@ $(document).ready(() => {
         }
 
         function buildFileMenu(dd) {
-            dd.appendChild(mkItem('New', null, function() { document.getElementById('web-new-btn').click(); }));
-            dd.appendChild(mkItem('Open…', 'Ctrl+O', function() { document.getElementById('web-open-btn').click(); }));
-            dd.appendChild(mkItem('Save / Download', 'Ctrl+S', function() { document.getElementById('web-save-btn').click(); }));
+            dd.appendChild(mkItem('New', null, function() { fileActions.doNew(); }));
+            dd.appendChild(mkItem('Open…', 'Ctrl+O', function() { fileActions.doOpen(); }));
+            dd.appendChild(mkItem('Save / Download', 'Ctrl+S', function() { fileActions.doSave(); }));
             dd.appendChild(mkSep());
             dd.appendChild(mkItem('Export to JSON…', 'Ctrl+Shift+S', function() {
                 WebExport.exportJson(InkProject.currentProject, function(msg) { alert(msg); });

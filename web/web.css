@@ -33,10 +33,15 @@
   -webkit-user-select: none;
   user-select: none;
 }
-.dark #web-menubar {
-  background: #2b2b2b;
+.dark #web-menubar,
+.contrast #web-menubar,
+.focus #web-menubar {
+  background: #222;
   border-bottom-color: #444;
   color: #ddd;
+}
+.dark #web-menubar {
+  background: #2b2b2b;
 }
 .web-menubar-item {
   padding: 0 10px;
@@ -50,7 +55,11 @@
   color: #fff;
 }
 .dark .web-menubar-item:hover,
-.dark .web-menubar-item.active {
+.dark .web-menubar-item.active,
+.contrast .web-menubar-item:hover,
+.contrast .web-menubar-item.active,
+.focus .web-menubar-item:hover,
+.focus .web-menubar-item.active {
   background: #3a3a7c;
   color: #fff;
 }
