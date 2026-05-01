@@ -57,9 +57,9 @@
   color: #fff;
 }
 
-/* Layout: push toolbar, main content, and rename input below menubar */
-.web #toolbar { top: 22px; }
-.web #main    { top: 78px; } /* 22px menubar + 56px toolbar */
+/* Layout: push toolbar and main content below menubar; compact toolbar (no title) */
+.web #toolbar { top: 22px; height: 34px; }
+.web #main    { top: 56px; } /* 22px menubar + 34px toolbar */
 
 /* Submenu trigger arrow */
 .web-dropdown-has-sub {
