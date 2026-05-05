@@ -165,7 +165,7 @@ async function buildPackageForPlatform(targetPlatform) {
         if( shouldCodesign ) {
             opts.osxSign = true;
             opts.osxNotarize = {
-                keychainProfile: "notarisationKeychainPassword"
+                keychainProfile: "inkle"
             };
         }
     }
