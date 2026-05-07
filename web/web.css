@@ -61,6 +61,18 @@
 .web #toolbar { top: 22px; height: 34px; }
 .web #main    { top: 56px; } /* 22px menubar + 34px toolbar */
 
+/* Match the desktop compact toolbar: keep issue counts centered inside the
+   34px toolbar instead of inheriting the macOS title-toolbar offset. */
+.web #toolbar div.issuesSummary {
+  top: 0;
+  height: 34px;
+  line-height: 34px;
+}
+
+.web #toolbar .issue-popup {
+  top: 35px;
+}
+
 /* Submenu trigger arrow */
 .web-dropdown-has-sub {
   display: flex;
