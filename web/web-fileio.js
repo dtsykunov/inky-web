@@ -60,13 +60,14 @@ function init(opts) {
         downloadAllFiles(opts.getAllFiles());
     }
 
-    // Ctrl+S / Cmd+S → download all
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    // Ctrl+S / Cmd+S → download all. Listen during capture so the browser
+    // page-save shortcut cannot win before the editor's bubbling handlers.
+    window.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 's') {
             e.preventDefault();
             doSave();
         }
-    });
+    }, true);
 
     // Drag-and-drop one or more .ink files
     document.addEventListener('dragover', function(e) {
