@@ -593,6 +593,45 @@ $(document).ready(() => {
         modal.classList.remove('hidden');
     }
 
+    function openExternal(url) {
+        var opened = window.open(url, '_blank', 'noopener');
+        if (opened) opened.opener = null;
+    }
+
+    function showAboutModal() {
+        var modal = buildModal('About Inky Web', []);
+        var box = modal.querySelector('.web-modal-box');
+        var table = box.querySelector('table');
+        if (table) table.remove();
+
+        function addParagraph(text) {
+            var p = document.createElement('p');
+            p.className = 'web-modal-text';
+            p.textContent = text;
+            box.insertBefore(p, box.querySelector('.web-modal-close'));
+        }
+
+        function addLink(label, url) {
+            var p = document.createElement('p');
+            p.className = 'web-modal-text';
+            var a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.textContent = label;
+            p.appendChild(a);
+            box.insertBefore(p, box.querySelector('.web-modal-close'));
+        }
+
+        addParagraph('Inky Web is an independent, fan-made browser adaptation of the Inky editor for ink.');
+        addParagraph('It is not affiliated with, endorsed by, or maintained by inkle or the original Inky authors.');
+        addLink('Original ink website', 'https://www.inklestudios.com/ink/');
+        addLink('Source code', 'https://github.com/dtsykunov/inky-web');
+
+        document.body.appendChild(modal);
+        modal.classList.remove('hidden');
+    }
+
     // ---- Menu bar --------------------------------------------------------
     (function() {
         var bar = document.createElement('div');
@@ -805,6 +844,15 @@ $(document).ready(() => {
 
         function buildHelpMenu(dd) {
             dd.appendChild(mkItem('Keyboard shortcuts…', 'F1', function() { showShortcutsModal(); }));
+            dd.appendChild(mkSep());
+            dd.appendChild(mkItem('Original ink website', null, function() {
+                openExternal('https://www.inklestudios.com/ink/');
+            }));
+            dd.appendChild(mkItem('Source code', null, function() {
+                openExternal('https://github.com/dtsykunov/inky-web');
+            }));
+            dd.appendChild(mkSep());
+            dd.appendChild(mkItem('About Inky Web…', null, function() { showAboutModal(); }));
         }
 
         [

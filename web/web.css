@@ -226,6 +226,18 @@
   color: #999;
   margin: 10px 0 4px;
 }
+.web-modal-text {
+  line-height: 1.45;
+  margin: 8px 0;
+}
+.web-modal-text a {
+  color: #0060df;
+}
+.dark .web-modal-text a,
+.contrast .web-modal-text a,
+.focus .web-modal-text a {
+  color: #8ab4f8;
+}
 .web-modal-close {
   display: block;
   margin: 14px auto 0;
