@@ -15,6 +15,8 @@ var currentSessionId = null;
 var lastEditorChange = null;
 var reloadPending    = false;
 
+var issues = [];
+
 // ----------------------------------------------------------------
 // Public API (same surface as the original LiveCompiler)
 // ----------------------------------------------------------------
@@ -32,9 +34,25 @@ function setEvents(e) {
     events = e;
 }
 
-function getIssues() { return []; }
+function resetIssues() {
+    issues = [];
+}
 
-function getIssuesForFilename() { return []; }
+function setIssues(newIssues) {
+    issues = newIssues || [];
+    events.errorsAdded && events.errorsAdded(issues);
+}
+
+function addIssues(newIssues) {
+    issues = issues.concat(newIssues || []);
+    events.errorsAdded && events.errorsAdded(newIssues || []);
+}
+
+function getIssues() { return issues; }
+
+function getIssuesForFilename(filename) {
+    return issues.filter(function(issue) { return issue.filename === filename; });
+}
 
 function choose(choiceObj) {
     if (!story) return;
@@ -87,6 +105,7 @@ function reloadAndPlay() {
     currentSessionId = 'web_' + sessionCounter;
 
     events.resetting && events.resetting(currentSessionId);
+    resetIssues();
     events.compilerBusyChanged && events.compilerBusyChanged(true);
 
     // Build file map so INCLUDE statements can be resolved
@@ -121,23 +140,20 @@ function reloadAndPlay() {
         }
         if (earlyIssues.length === 0)
             earlyIssues = [{ type: 'ERROR', filename: mainFilename, lineNumber: 1, message: e.message || String(e) }];
-        events.errorsAdded && events.errorsAdded(earlyIssues);
+        setIssues(earlyIssues);
         events.compilerBusyChanged && events.compilerBusyChanged(false);
         events.exitDueToError && events.exitDueToError();
         return;
     }
 
     // Collect compile-time errors/warnings/TODOs
-    var issues = [];
-    (compiler.errors        || []).forEach(function(m) { issues.push(parseMessage(m, 'ERROR',   mainFilename)); });
-    (compiler.warnings      || []).forEach(function(m) { issues.push(parseMessage(m, 'WARNING', mainFilename)); });
-    (compiler.authorMessages|| []).forEach(function(m) { issues.push(parseMessage(m, 'TODO',    mainFilename)); });
-
-    if (issues.length > 0) {
-        events.errorsAdded && events.errorsAdded(issues);
-    }
+    var compileIssues = [];
+    (compiler.errors        || []).forEach(function(m) { compileIssues.push(parseMessage(m, 'ERROR',   mainFilename)); });
+    (compiler.warnings      || []).forEach(function(m) { compileIssues.push(parseMessage(m, 'WARNING', mainFilename)); });
+    (compiler.authorMessages|| []).forEach(function(m) { compileIssues.push(parseMessage(m, 'TODO',    mainFilename)); });
 
     if (!story || (compiler.errors && compiler.errors.length > 0)) {
+        setIssues(compileIssues);
         events.compilerBusyChanged && events.compilerBusyChanged(false);
         events.exitDueToError && events.exitDueToError();
         return;
@@ -146,7 +162,7 @@ function reloadAndPlay() {
     // Story compiled OK — wire up runtime error handler
     story.onError = function(msg, type) {
         var isWarning = type && String(type).indexOf('Warning') >= 0;
-        events.errorsAdded && events.errorsAdded([{
+        addIssues([{
             type: isWarning ? 'RUNTIME WARNING' : 'RUNTIME ERROR',
             message: msg,
             lineNumber: 1,
@@ -155,6 +171,9 @@ function reloadAndPlay() {
     };
 
     events.compileComplete && events.compileComplete(currentSessionId);
+    if (compileIssues.length > 0) {
+        setIssues(compileIssues);
+    }
     runTurn();
 }
 

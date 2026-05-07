@@ -137,6 +137,8 @@ LiveCompiler.setEvents({
     resetting: () => {
         allIssues = [];
         currentIssueIdx = -1;
+        EditorView.clearErrors();
+        ToolbarView.clearIssueSummary();
     },
     compileComplete: (sessionId) => {
         PlayerView.prepareForNewPlaythrough(sessionId);
@@ -152,13 +154,16 @@ LiveCompiler.setEvents({
     },
     errorsAdded: (errors) => {
         allIssues = allIssues.concat(errors);
-        for (const error of errors) {
+        EditorView.clearErrors();
+        for (const error of allIssues) {
             if (error.filename === InkProject.currentProject.activeInkFile.relativePath())
                 EditorView.addError(error);
+        }
+        for (const error of errors) {
             if (error.type === 'RUNTIME ERROR' || error.type === 'RUNTIME WARNING')
                 PlayerView.addLineError(error, () => gotoIssue(error));
         }
-        ToolbarView.updateIssueSummary(errors);
+        ToolbarView.updateIssueSummary(allIssues);
     },
     playerPrompt: (_replaying, doneCallback) => {
         PlayerView.contentReady();
