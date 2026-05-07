@@ -102,6 +102,47 @@ function exportForWeb(project, onError, onSuccess) {
     });
 }
 
+// Export the compiled story JSON only (no HTML wrapper).
+// project — InkProject.currentProject
+// onError — function(message)
+function exportJson(project, onError) {
+    var fileMap = {};
+    project.files.forEach(function(f) { fileMap[f.relativePath()] = f.getValue(); });
+
+    var story;
+    try {
+        var compiler = new Compiler(
+            project.mainInk.getValue(),
+            new CompilerOptions(
+                project.mainInk.filename(),
+                [],
+                false,
+                null,
+                {
+                    ResolveInkFilename: function(fn) { return fn; },
+                    LoadInkFileContents: function(fn) { return fileMap[fn] || ''; }
+                }
+            )
+        );
+        story = compiler.Compile();
+    } catch(e) {
+        onError('Compilation failed — fix errors before exporting.\n\n' + e.message);
+        return;
+    }
+
+    var json = story.ToJson();
+    var safeTitle = project.mainInk.filename().replace(/\.ink$/i, '').replace(/[^a-z0-9_-]/gi, '_');
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = safeTitle + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+}
+
 function escapeHtml(str) {
     return str
         .replace(/&/g, '&amp;')
@@ -110,4 +151,4 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-exports.WebExport = { exportForWeb: exportForWeb };
+exports.WebExport = { exportForWeb: exportForWeb, exportJson: exportJson };
